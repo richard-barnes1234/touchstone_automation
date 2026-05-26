@@ -69,18 +69,19 @@ def extract_all_loss_data(analysis_sid, output_folder="."):
     print("="*50)
 
 # 1. ELT
+
+# 1. ELT
     print("\n1. Fetching Event Loss Table (ELT)...")
-    response = send_soap_request(
-        get_loss_analysis_event_results(
-            BUSINESS_UNIT_SID, SQL_INSTANCE_SID, analysis_sid)
-    )
+    soap = get_loss_analysis_event_results(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, analysis_sid)
+    response = send_soap_request(soap)
     if response.status_code == 200:
         df_elt = parse_event_results(response.text)
         df_elt.to_csv(f"{output_folder}/elt_{analysis_sid}.csv", index=False)
         print(f"    ELT saved  {len(df_elt)} records")
     else:
-        print(f"    Failed: {response.status_code}")
-
+            print(f"    Failed")
+          #  print(response.text[:500])
+    
 # 2. EP Curves
     print("\n2. Fetching EP Curves (Annual Results)...")
     response = send_soap_request(
