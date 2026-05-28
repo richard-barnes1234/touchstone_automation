@@ -73,29 +73,33 @@ def format_worksheet(ws):
 
 print("Fetching Exposure Sets...")
 
-response = send_soap_request(soap_body)
-print(f"Status Code: {response.status_code}")
-if response.status_code == 200:
+def extract_exposure_sets_data():
+    """Fetches exposure sets from Touchstone and returns a DataFrame"""
+    print("Fetching Exposure Sets...")
+    response = send_soap_request(soap_body)
+    print(f"Status Code: {response.status_code}")
 
-        print(" Success!")  
+    if response.status_code == 200:
+        print("Success!")
         from parse_exposure_sets import parse_exposure_sets, print_exposure_sets
-
         exposure_sets = parse_exposure_sets(response.text)
         print_exposure_sets(exposure_sets)
-        
-        #Save to CSV
-        OUTPUT = "exposure_sets.xlsx"
+
         df = pd.DataFrame(exposure_sets)
+
+        # Save to Excel
+        OUTPUT = "exposure_sets.xlsx"
         df.to_excel(OUTPUT, index=False, sheet_name="Exposure Sets")
-        
         wb = load_workbook(OUTPUT)
-        format_worksheet(wb["Exposure Sets"])  # bold headers, alternating rows, auto-fit columns
+        format_worksheet(wb["Exposure Sets"])
         wb.save(OUTPUT)
+        print(f"Saved {len(exposure_sets)} exposure sets to {OUTPUT}")
 
+        return df
+    else:
+        print("Failed!")
+        print(response.text)
+        return None
 
-
-      #  print(f" Saved {len(exposure_sets)} exposure sets to exposure_sets.csv")
-        
-else:
-            print(" Failed!")
-            print(response.text)    
+if __name__ == "__main__":
+    extract_exposure_sets_data()
