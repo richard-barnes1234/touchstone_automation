@@ -1,4 +1,3 @@
-
 TOUCHSTONE_URL = "https://crcins-na-prod-touchstoneapi.air-worldwide.com/FEP/AirServiceFacade.svc"
 
 
@@ -23,6 +22,30 @@ def get_exposure_sets(business_unit_sid, sql_instance_sid, data_source_sid):
          </request>
     </GetExposureSets>
    </s:Body>
+</s:Envelope>"""
+
+
+def get_detailed_loss_analyses(business_unit_sid, sql_instance_sid):
+    """Fetches all available loss analyses from Touchstone"""
+    return f"""<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
+        xmlns:a="http://www.w3.org/2005/08/addressing">
+  <s:Header>
+    <a:Action s:mustUnderstand="1">AIR.Services.LossAnalysisService.Api/ILossAnalysisService/GetDetailedLossAnalyses</a:Action>
+    <a:MessageID>urn:uuid:a1b2c3d4-e5f6-7890-abcd-ef1234567890</a:MessageID>
+    <a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo>
+    <a:To s:mustUnderstand="1">{TOUCHSTONE_URL}</a:To>
+  </s:Header>
+  <s:Body>
+    <GetDetailedLossAnalyses xmlns="AIR.Services.LossAnalysisService.Api">
+      <request xmlns:b="AIR.Services.LossAnalysis.Api"
+               xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+        <BusinessUnitSid xmlns="AIR.Services.Common.Api">{business_unit_sid}</BusinessUnitSid>
+        <LicenseUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</LicenseUid>
+        <RequestUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</RequestUid>
+        <SqlInstanceSid xmlns="AIR.Services.Common.Api">{sql_instance_sid}</SqlInstanceSid>
+      </request>
+    </GetDetailedLossAnalyses>
+  </s:Body>
 </s:Envelope>"""
 
 
