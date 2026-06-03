@@ -421,11 +421,20 @@ elif page == "📊  Results":
                 f"📄  Loss Summary ({len(df_summary):,})"
             ])
             with tab1:
-                st.dataframe(df_elt, use_container_width=True, height=400) if not df_elt.empty else st.info("No ELT data")
+                if not df_elt.empty:
+                    st.dataframe(df_elt, use_container_width=True, height=400)
+                else:
+                    st.info("No ELT data returned for this analysis")
             with tab2:
-                st.dataframe(df_ep, use_container_width=True, height=400) if not df_ep.empty else st.info("No EP Curves data")
+                if not df_ep.empty:
+                    st.dataframe(df_ep, use_container_width=True, height=400)
+                else:
+                    st.info("No EP Curves data returned for this analysis")
             with tab3:
-                st.dataframe(df_summary, use_container_width=True, height=400) if not df_summary.empty else st.info("No Loss Summary data")
+                if not df_summary.empty:
+                    st.dataframe(df_summary, use_container_width=True, height=400)
+                else:
+                    st.info("No Loss Summary data returned for this analysis")
 
             st.markdown('<div class="section-header">Download Report</div>', unsafe_allow_html=True)
             if any(not v.empty for v in results.values()):
