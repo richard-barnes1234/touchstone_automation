@@ -7,30 +7,11 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from api_client import send_soap_request
 from config import BUSINESS_UNIT_SID, SQL_INSTANCE_SID
+from soap_templates import get_projects, get_detailed_loss_analyses, get_hazard_analyses
 
 # ─── STEP 1: GET ALL PROJECTS ─────────────────────────────
 def get_all_projects():
-    soap_body = f"""<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
-            xmlns:a="http://www.w3.org/2005/08/addressing">
-   <s:Header>
-      <a:Action s:mustUnderstand="1">AIR.Services.ProjectManagementService.Api/IProjectManagementService/GetProjects</a:Action>
-      <a:MessageID>urn:uuid:f23aa50c-9a41-4932-bd0e-51a37913fde1</a:MessageID>
-      <a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo>
-      <a:To s:mustUnderstand="1">https://crcins-na-prod-touchstoneapi.air-worldwide.com/FEP/AirServiceFacade.svc</a:To>
-   </s:Header>
-   <s:Body>
-      <GetProjects xmlns="AIR.Services.ProjectManagementService.Api">
-         <request xmlns:b="AIR.Services.ProjectManagement.Api"
-                  xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
-            <BusinessUnitSid xmlns="AIR.Services.Common.Api">{BUSINESS_UNIT_SID}</BusinessUnitSid>
-            <LicenseUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</LicenseUid>
-            <RequestUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</RequestUid>
-            <SqlInstanceSid xmlns="AIR.Services.Common.Api">{SQL_INSTANCE_SID}</SqlInstanceSid>
-         </request>
-      </GetProjects>
-   </s:Body>
-</s:Envelope>"""
-
+    soap_body = get_projects(BUSINESS_UNIT_SID, SQL_INSTANCE_SID)
     print("Fetching all projects...")
     response = send_soap_request(soap_body)
 
@@ -61,29 +42,8 @@ def get_all_projects():
 
 # ─── STEP 2: GET LOSS ANALYSES FOR A PROJECT ──────────────
 def get_analyses_for_project(project_sid, project_name):
-    soap_body = f"""<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
-            xmlns:a="http://www.w3.org/2005/08/addressing">
-   <s:Header>
-      <a:Action s:mustUnderstand="1">AIR.Services.LossAnalysisService.Api/ILossAnalysisService/GetDetailedLossAnalyses</a:Action>
-      <a:MessageID>urn:uuid:f23aa50c-9a41-4932-bd0e-51a37913fde1</a:MessageID>
-      <a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo>
-      <a:To s:mustUnderstand="1">https://crcins-na-prod-touchstoneapi.air-worldwide.com/FEP/AirServiceFacade.svc</a:To>
-   </s:Header>
-   <s:Body>
-      <GetDetailedLossAnalyses xmlns="AIR.Services.LossAnalysisService.Api">
-         <request xmlns:b="AIR.Services.LossAnalysis.Api"
-                  xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
-            <BusinessUnitSid xmlns="AIR.Services.Common.Api">{BUSINESS_UNIT_SID}</BusinessUnitSid>
-            <LicenseUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</LicenseUid>
-            <RequestUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</RequestUid>
-            <SqlInstanceSid xmlns="AIR.Services.Common.Api">{SQL_INSTANCE_SID}</SqlInstanceSid>
-            <b:ProjectSid>{project_sid}</b:ProjectSid>
-         </request>
-      </GetDetailedLossAnalyses>
-   </s:Body>
-</s:Envelope>"""
-
-    response = send_soap_request(soap_body)
+    soap_body = get_detailed_loss_analyses(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, project_sid)
+    response  = send_soap_request(soap_body)
     if response.status_code != 200:
         return []
 
@@ -117,29 +77,8 @@ def get_analyses_for_project(project_sid, project_name):
 
 # ─── STEP 3: GET HAZARD ANALYSES FOR A PROJECT ────────────
 def get_hazard_analyses_for_project(project_sid, project_name):
-    soap_body = f"""<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
-            xmlns:a="http://www.w3.org/2005/08/addressing">
-   <s:Header>
-      <a:Action s:mustUnderstand="1">AIR.Services.HazardAnalysisService.Api/IHazardAnalysisService/GetHazardAnalyses</a:Action>
-      <a:MessageID>urn:uuid:f23aa50c-9a41-4932-bd0e-51a37913fde1</a:MessageID>
-      <a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo>
-      <a:To s:mustUnderstand="1">https://crcins-na-prod-touchstoneapi.air-worldwide.com/FEP/AirServiceFacade.svc</a:To>
-   </s:Header>
-   <s:Body>
-      <GetHazardAnalyses xmlns="AIR.Services.HazardAnalysisService.Api">
-         <request xmlns:b="AIR.Services.HazardAnalysis.Api"
-                  xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
-            <BusinessUnitSid xmlns="AIR.Services.Common.Api">{BUSINESS_UNIT_SID}</BusinessUnitSid>
-            <LicenseUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</LicenseUid>
-            <RequestUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</RequestUid>
-            <SqlInstanceSid xmlns="AIR.Services.Common.Api">{SQL_INSTANCE_SID}</SqlInstanceSid>
-            <b:ProjectSid>{project_sid}</b:ProjectSid>
-         </request>
-      </GetHazardAnalyses>
-   </s:Body>
-</s:Envelope>"""
-
-    response = send_soap_request(soap_body)
+    soap_body = get_hazard_analyses(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, project_sid)
+    response  = send_soap_request(soap_body)
     if response.status_code != 200:
         return []
 

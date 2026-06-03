@@ -123,3 +123,77 @@ def get_loss_analysis_summary_results(business_unit_sid, sql_instance_sid, analy
         </GetLossAnalysisSummaryResults>
   </s:Body>
 </s:Envelope>"""
+
+
+def get_projects(business_unit_sid, sql_instance_sid):
+    """Fetches all projects from Touchstone"""
+    return f"""<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
+        xmlns:a="http://www.w3.org/2005/08/addressing">
+  <s:Header>
+    <a:Action s:mustUnderstand="1">AIR.Services.ProjectManagementService.Api/IProjectManagementService/GetProjects</a:Action>
+    <a:MessageID>urn:uuid:f23aa50c-9a41-4932-bd0e-51a37913fde1</a:MessageID>
+    <a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo>
+    <a:To s:mustUnderstand="1">{TOUCHSTONE_URL}</a:To>
+  </s:Header>
+  <s:Body>
+    <GetProjects xmlns="AIR.Services.ProjectManagementService.Api">
+      <request xmlns:b="AIR.Services.ProjectManagement.Api"
+               xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+        <BusinessUnitSid xmlns="AIR.Services.Common.Api">{business_unit_sid}</BusinessUnitSid>
+        <LicenseUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</LicenseUid>
+        <RequestUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</RequestUid>
+        <SqlInstanceSid xmlns="AIR.Services.Common.Api">{sql_instance_sid}</SqlInstanceSid>
+      </request>
+    </GetProjects>
+  </s:Body>
+</s:Envelope>"""
+
+
+def get_detailed_loss_analyses(business_unit_sid, sql_instance_sid, project_sid):
+    """Fetches all loss analyses for a given project"""
+    return f"""<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
+        xmlns:a="http://www.w3.org/2005/08/addressing">
+  <s:Header>
+    <a:Action s:mustUnderstand="1">AIR.Services.LossAnalysisService.Api/ILossAnalysisService/GetDetailedLossAnalyses</a:Action>
+    <a:MessageID>urn:uuid:f23aa50c-9a41-4932-bd0e-51a37913fde1</a:MessageID>
+    <a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo>
+    <a:To s:mustUnderstand="1">{TOUCHSTONE_URL}</a:To>
+  </s:Header>
+  <s:Body>
+    <GetDetailedLossAnalyses xmlns="AIR.Services.LossAnalysisService.Api">
+      <request xmlns:b="AIR.Services.LossAnalysis.Api"
+               xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+        <BusinessUnitSid xmlns="AIR.Services.Common.Api">{business_unit_sid}</BusinessUnitSid>
+        <LicenseUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</LicenseUid>
+        <RequestUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</RequestUid>
+        <SqlInstanceSid xmlns="AIR.Services.Common.Api">{sql_instance_sid}</SqlInstanceSid>
+        <b:ProjectSid>{project_sid}</b:ProjectSid>
+      </request>
+    </GetDetailedLossAnalyses>
+  </s:Body>
+</s:Envelope>"""
+
+
+def get_hazard_analyses(business_unit_sid, sql_instance_sid, project_sid):
+    """Fetches all hazard analyses for a given project"""
+    return f"""<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
+        xmlns:a="http://www.w3.org/2005/08/addressing">
+  <s:Header>
+    <a:Action s:mustUnderstand="1">AIR.Services.HazardAnalysisService.Api/IHazardAnalysisService/GetHazardAnalyses</a:Action>
+    <a:MessageID>urn:uuid:f23aa50c-9a41-4932-bd0e-51a37913fde1</a:MessageID>
+    <a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo>
+    <a:To s:mustUnderstand="1">{TOUCHSTONE_URL}</a:To>
+  </s:Header>
+  <s:Body>
+    <GetHazardAnalyses xmlns="AIR.Services.HazardAnalysisService.Api">
+      <request xmlns:b="AIR.Services.HazardAnalysis.Api"
+               xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+        <BusinessUnitSid xmlns="AIR.Services.Common.Api">{business_unit_sid}</BusinessUnitSid>
+        <LicenseUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</LicenseUid>
+        <RequestUid xmlns="AIR.Services.Common.Api">00000000-0000-0000-0000-000000000000</RequestUid>
+        <SqlInstanceSid xmlns="AIR.Services.Common.Api">{sql_instance_sid}</SqlInstanceSid>
+        <b:ProjectSid>{project_sid}</b:ProjectSid>
+      </request>
+    </GetHazardAnalyses>
+  </s:Body>
+</s:Envelope>"""
