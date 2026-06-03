@@ -1,0 +1,111 @@
+# touchstone_client.py
+# Fetches all Analysis SIDs and names from Touchstone SOAP API.
+
+import xml.etree.ElementTree as ET
+import pandas as pd
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+from api_client import send_soap_request
+from config import BUSINESS_UNIT_SID, SQL_INSTANCE_SID
+from soap_templates import (
+    get_detailed_loss_analyses,
+    get_loss_analysis_event_results,
+    get_loss_analysis_annual_results,
+    get_loss_analysis_summary_results,
+)
+
+
+def get_analysis_sids():
+    """
+    Calls GetDetailedLossAnalyses.
+    Returns a list of dicts: [ { "AnalysisSid": 63, "Name": "DefaultUW" }, ... ]
+    """
+    soap     = get_detailed_loss_analyses(BUSINESS_UNIT_SID, SQL_INSTANCE_SID)
+    response = send_soap_request(soap)
+
+    if response.status_code != 200:
+        raise Exception(f"API call failed — status {response.status_code}")
+
+    root    = ET.fromstring(response.text)
+    results = []
+
+    for elem in root.iter():
+        tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+        if tag == 'DetailedLossAnalysis':
+            sid  = None
+            name = None
+            for child in elem:
+                child_tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+                if child_tag == 'Sid':
+                    sid = child.text
+                elif child_tag == 'Name':
+                    name = child.text
+            if sid:
+                results.append({
+                    "AnalysisSid": int(sid),
+                    "Name":        name or f"Analysis {sid}"
+                })
+
+    if not results:
+        all_tags = sorted({
+            elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+            for elem in root.iter()
+        })
+        raise Exception(f"No analyses found. Tags in response: {all_tags}")
+
+    results.sort(key=lambda x: x["AnalysisSid"], reverse=True)
+    return results
+
+
+def get_all_loss_data(analysis_sid):
+    """Fetches ELT, EP Curves, Loss Summary for a given AnalysisSid"""
+
+    def _parse(response_text, element_tag):
+        root    = ET.fromstring(response_text)
+        records = []
+        for elem in root.iter():
+            tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+            if tag == element_tag:
+                record = {}
+                for child in elem:
+                    child_tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+                    record[child_tag] = child.text
+                if record:
+                    records.append(record)
+        return pd.DataFrame(records)
+
+    results = {}
+
+    try:
+        r = send_soap_request(get_loss_analysis_event_results(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, analysis_sid))
+        results['ELT'] = _parse(r.text, 'EventLoss') if r.status_code == 200 else pd.DataFrame()
+    except:
+        results['ELT'] = pd.DataFrame()
+
+    try:
+        r = send_soap_request(get_loss_analysis_annual_results(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, analysis_sid))
+        results['EP Curves'] = _parse(r.text, 'AnnualEPData') if r.status_code == 200 else pd.DataFrame()
+    except:
+        results['EP Curves'] = pd.DataFrame()
+
+    try:
+        r = send_soap_request(get_loss_analysis_summary_results(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, analysis_sid))
+        results['Loss Summary'] = _parse(r.text, 'SummaryEPDistribution') if r.status_code == 200 else pd.DataFrame()
+    except:
+        results['Loss Summary'] = pd.DataFrame()
+
+    return results
+
+
+if __name__ == "__main__":
+    print("Fetching Analysis SIDs from Touchstone...")
+    try:
+        analyses = get_analysis_sids()
+        print(f"✓ {len(analyses)} analyses found\n")
+        for a in analyses[:10]:
+            print(f"  SID {a['AnalysisSid']:>6}  —  {a['Name']}")
+        if len(analyses) > 10:
+            print(f"  ... and {len(analyses) - 10} more")
+    except Exception as e:
+        print(f"✗ Failed: {e}")
