@@ -7,7 +7,7 @@
 import pyodbc
 import pandas as pd
 
-SERVER   = "P19TS1DB01\\PRIMARYSQL2019"
+SERVER   = "10.196.2.207,14001"   # IP + port (non-standard port 14001)
 DATABASE = "AIRResult"
 
 # ── Connection ────────────────────────────────────────────────────────────────
