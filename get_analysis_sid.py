@@ -51,14 +51,15 @@ def get_all_projects():
                 project[tag] = child.text
             if project.get('Sid'):
                 projects.append({
-                    'ProjectSid'   : project.get('Sid'),
-                    'ProjectName'  : project.get('Name'),
-                    'ResultCount'  : project.get('ResultSetCount', 0),
-                    'StateCode'    : project.get('StateCode')
+                    'ProjectSid'  : project.get('Sid'),
+                    'ProjectName' : project.get('Name'),
+                    'ResultCount' : project.get('ResultSetCount', 0),
+                    'StateCode'   : project.get('StateCode')
                 })
 
     print(f"  ✓ {len(projects)} projects found")
     return projects
+
 
 # ─── STEP 2: GET ANALYSES FOR A PROJECT ───────────────────
 def get_analyses_for_project(project_sid, project_name):
@@ -100,23 +101,26 @@ def get_analyses_for_project(project_sid, project_name):
             for child in elem:
                 tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
                 analysis[tag] = child.text
-            
-            # Only keep completed analyses
+
             status = analysis.get('ActivityStatusCode', '')
-            sid = analysis.get('Sid', '')
-            name = analysis.get('Name', '')
+            sid    = analysis.get('Sid', '')
+            name   = analysis.get('Name', '')
 
             if status == 'Completed' and sid:
+                # Get analysis type
+                analysis_type = analysis.get('AnalysisType', 'EXPS')
                 analyses.append({
                     'ProjectSid'   : project_sid,
                     'ProjectName'  : project_name,
                     'AnalysisSid'  : sid,
                     'AnalysisName' : name,
+                    'AnalysisType' : analysis_type,
                     'Status'       : status,
                     'Completed'    : analysis.get('Completed')
                 })
 
     return analyses
+
 
 # ─── STEP 3: GET ALL COMPLETED ANALYSES ───────────────────
 def get_all_completed_analyses():
@@ -126,14 +130,12 @@ def get_all_completed_analyses():
     print("  FETCHING ALL COMPLETED ANALYSES")
     print("="*55)
 
-    # Get all projects
     projects = get_all_projects()
 
     if not projects:
         print("  ✗ No projects found")
         return pd.DataFrame()
 
-    # Filter only active projects with results
     active_projects = [
         p for p in projects
         if p['StateCode'] == 'Active'
@@ -141,7 +143,6 @@ def get_all_completed_analyses():
     ]
     print(f"  Active projects with results: {len(active_projects)}")
 
-    # Get analyses for each project
     all_analyses = []
     for i, project in enumerate(active_projects, 1):
         print(f"  [{i}/{len(active_projects)}] {project['ProjectName']} (SID: {project['ProjectSid']})")
@@ -152,17 +153,22 @@ def get_all_completed_analyses():
         print(f"    → {len(analyses)} completed analyses")
         all_analyses.extend(analyses)
 
-    # Convert to DataFrame
     df = pd.DataFrame(all_analyses)
 
-    print(f"\n  ✓ Total completed analyses found: {len(df)}")
+    if not df.empty:
+        exps_count = len(df[df['AnalysisType'] == 'EXPS']) if 'AnalysisType' in df.columns else 0
+        haz_count  = len(df[df['AnalysisType'] == 'HAZ'])  if 'AnalysisType' in df.columns else 0
+        print(f"\n  ✓ Total completed analyses found : {len(df)}")
+        print(f"    Loss analyses (EXPS)           : {exps_count}")
+        print(f"    Hazard analyses (HAZ)          : {haz_count}")
     print("="*55)
 
     return df
 
+
 if __name__ == "__main__":
     df = get_all_completed_analyses()
     if not df.empty:
-        print(f"\n{df[['ProjectName','AnalysisSid','AnalysisName','Completed']].to_string()}")
+        print(f"\n{df[['ProjectName','AnalysisSid','AnalysisName','AnalysisType','Completed']].to_string()}")
         df.to_csv("all_analyses.csv", index=False)
         print(f"\n✓ Saved to all_analyses.csv")
