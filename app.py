@@ -320,9 +320,27 @@ elif page == "📁  Projects":
                 if len(analyses) == 0:
                     st.info("No completed analyses found for this project.")
                 else:
-                    # Show first 50
-                    shown = analyses[:50]
-                    st.markdown(f"<div style='font-size:0.8rem;color:#6B7E8F;margin-bottom:0.75rem;'>Showing first {len(shown)} of {len(analyses)} completed analyses</div>", unsafe_allow_html=True)
+                    # Search box
+                    analysis_search = st.text_input(
+                        "Search analyses",
+                        placeholder="Search by Analysis SID or name...",
+                        label_visibility="collapsed",
+                        key="analysis_search_input"
+                    )
+
+                    # Filter by SID or name
+                    if analysis_search:
+                        filtered_analyses = [
+                            a for a in analyses
+                            if analysis_search.lower() in a["AnalysisName"].lower()
+                            or analysis_search in str(a["AnalysisSid"])
+                        ]
+                    else:
+                        filtered_analyses = analyses
+
+                    # Show first 50 of filtered
+                    shown = filtered_analyses[:50]
+                    st.markdown(f"<div style='font-size:0.8rem;color:#6B7E8F;margin-bottom:0.75rem;'>Showing {len(shown)} of {len(filtered_analyses)} analyses{' (filtered)' if analysis_search else ''}</div>", unsafe_allow_html=True)
 
                     for a in shown:
                         col_a, col_b = st.columns([5, 1])
