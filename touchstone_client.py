@@ -137,7 +137,12 @@ def get_hazard_results(analysis_sid):
             loc_record = {}
             for child in result_elem:
                 child_tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
-                if child_tag in LOCATION_TAGS:
+                if child_tag == 'LocationInfo':
+                    # LocationInfo is a nested element — flatten its children
+                    for sub in child:
+                        sub_tag = sub.tag.split('}')[-1] if '}' in sub.tag else sub.tag
+                        loc_record[sub_tag] = sub.text
+                elif child_tag in LOCATION_TAGS:
                     loc_record[child_tag] = child.text
                 elif child_tag in CATEGORY_TAGS:
                     # Parse category sub-fields
