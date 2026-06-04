@@ -241,6 +241,22 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 .empty .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .empty p { font-size: 0.875rem; }
 
+/* ── Filename input ───────────────────────────────────────── */
+.filename-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-bottom: 1rem; padding: 0.85rem 1rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.filename-row label { font-size: 0.8rem; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+.filename-row input {
+  flex: 1; padding: 0.45rem 0.75rem; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 0.875rem; font-family: var(--font-mono);
+  color: var(--ink); outline: none; transition: border 0.15s;
+}
+.filename-row input:focus { border-color: var(--accent-2); box-shadow: 0 0 0 3px rgba(46,91,154,0.1); }
+.filename-row .ext { font-size: 0.8rem; color: var(--ink-3); font-family: var(--font-mono); }
+
 /* ── Toast ────────────────────────────────────────────────── */
 .toast {
   position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
@@ -421,6 +437,12 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
         <div>
           <span id="banner-tag" class="tag"></span>
         </div>
+      </div>
+
+      <div class="filename-row" id="filename-row" style="display:none;">
+        <label>File name</label>
+        <input type="text" id="custom-filename" placeholder="e.g. DefaultUW_ELT_Report" />
+        <span class="ext">.xlsx</span>
       </div>
 
       <div class="btn-row">
@@ -656,6 +678,8 @@ function renderAnalysisList(type) {
 function selectAnalysis(sid, name, type) {
   state.selected = { ...state.selected, sid, name, type };
   state.lastResults = null;
+  document.getElementById('btn-download').style.display = 'none';
+  document.getElementById('filename-row').style.display = 'none';
   // Show persistent toast
   document.getElementById('toast-tag').textContent  = type;
   document.getElementById('toast-msg').textContent  = `${name} (SID: ${sid}) selected`;
@@ -709,6 +733,10 @@ async function fetchResults() {
     state.lastResults = j.data;
     renderResultsData(j.data, s.type);
     document.getElementById('btn-download').style.display = 'inline-flex';
+    document.getElementById('filename-row').style.display = 'flex';
+    // Pre-fill filename with analysis name
+    const defaultName = (state.selected.name || 'Report').replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
+    document.getElementById('custom-filename').value = defaultName;
   } catch(e) {
     document.getElementById('results-alert').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
   } finally { hideLoading(); }
@@ -790,10 +818,11 @@ async function downloadExcel() {
   try {
     const body = {
       meta: {
-        project_name:  s.projectName,
-        analysis_sid:  s.sid,
-        analysis_name: s.name,
-        analysis_type: s.type,
+        project_name:     s.projectName,
+        analysis_sid:     s.sid,
+        analysis_name:    s.name,
+        analysis_type:    s.type,
+        custom_filename:  document.getElementById('custom-filename').value.trim(),
       },
       datasets: datasets
     };

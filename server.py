@@ -49,32 +49,8 @@ def format_sheet(ws):
 
 def build_excel(meta, datasets):
     wb = Workbook()
-    ws = wb.active
-    ws.title = "Summary"
-    ws["A1"] = "Touchstone Results Report"
-    ws["A1"].font = Font(name="Calibri", bold=True, size=16, color="1E3A5F")
-    fields = [
-        ("Project",       meta.get("project_name", "")),
-        ("Analysis SID",  meta.get("analysis_sid", "")),
-        ("Analysis Name", meta.get("analysis_name", "")),
-        ("Type",          meta.get("analysis_type", "")),
-        ("Generated",     datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-    ]
-    for i, (k, v) in enumerate(fields, start=3):
-        ws[f"A{i}"] = k
-        ws[f"B{i}"] = v
-        ws[f"A{i}"].font = Font(name="Calibri", bold=True, size=10)
-    row = len(fields) + 5
-    ws[f"A{row}"] = "Contents"
-    ws[f"A{row}"].font = Font(name="Calibri", bold=True, size=10)
-    row += 1
-    for name, df in datasets.items():
-        if df is not None and not df.empty:
-            ws[f"A{row}"] = f"  • {name}"
-            ws[f"B{row}"] = f"{len(df):,} records"
-            row += 1
-    for col in ["A", "B"]:
-        ws.column_dimensions[col].width = 30
+    # Remove default sheet — we only want data sheets, no summary
+    wb.remove(wb.active)
 
     for sheet_name, df in datasets.items():
         if df is not None and not df.empty:
@@ -187,8 +163,13 @@ def api_download():
 
         excel_file = build_excel(meta, datasets)
 
-        safe = "".join(c for c in meta.get("analysis_name","report") if c.isalnum() or c in " _-")[:40].strip()
-        filename = f"Touchstone_{analysis_type}_{safe}_{meta.get('analysis_sid','')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        # Use custom filename if provided, else generate one
+        custom = meta.get("custom_filename", "").strip()
+        if custom:
+            filename = custom if custom.endswith(".xlsx") else custom + ".xlsx"
+        else:
+            safe = "".join(c for c in meta.get("analysis_name","report") if c.isalnum() or c in " _-")[:40].strip()
+            filename = f"Touchstone_{analysis_type}_{safe}_{meta.get('analysis_sid','')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
 
         return send_file(
             excel_file,
