@@ -20,39 +20,65 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 #MainMenu, footer, header { visibility: hidden; }
-.block-container { padding: 2rem 2.5rem; max-width: 1300px; }
-section[data-testid="stSidebar"] { background: #0D1B2A; border-right: 1px solid #1E3448; }
-section[data-testid="stSidebar"] * { color: #A8BFCF !important; }
-section[data-testid="stSidebar"] .stRadio label { font-size: 14px !important; padding: 8px 12px !important; border-radius: 6px !important; cursor: pointer !important; }
-section[data-testid="stSidebar"] .stRadio label:hover { background: #1E3448 !important; color: #E8F4FD !important; }
-.page-header { padding: 1.5rem 0 1rem 0; border-bottom: 1px solid #E2EAF4; margin-bottom: 1.5rem; }
-.page-header h1 { font-size: 1.6rem; font-weight: 600; color: #0D1B2A; margin: 0; }
-.page-header p  { font-size: 0.875rem; color: #6B7E8F; margin: 0.25rem 0 0 0; }
-.card { background: #fff; border: 1px solid #E2EAF4; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(13,27,42,0.04); }
-.card-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7E8F; margin-bottom: 0.5rem; }
-.card-value { font-size: 1.75rem; font-weight: 600; color: #0D1B2A; line-height: 1; }
-.card-sub   { font-size: 0.8rem; color: #6B7E8F; margin-top: 0.35rem; }
+.block-container { padding: 1.5rem 2rem; max-width: 1400px; }
+
+/* Sidebar */
+section[data-testid="stSidebar"] { background: #111827; border-right: 1px solid #1F2937; width: 220px !important; }
+section[data-testid="stSidebar"] * { color: #9CA3AF !important; }
+section[data-testid="stSidebar"] .stRadio label { font-size: 0.875rem !important; padding: 0.5rem 0.75rem !important; border-radius: 6px !important; cursor: pointer !important; transition: all 0.15s !important; }
+section[data-testid="stSidebar"] .stRadio label:hover { background: #1F2937 !important; color: #F9FAFB !important; }
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { color: #6B7280 !important; font-size: 0.75rem !important; }
+
+/* Page title */
+.page-header { padding: 0.5rem 0 1rem 0; margin-bottom: 1.25rem; border-bottom: 1px solid #E5E7EB; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0; letter-spacing: -0.02em; }
+.page-header p  { font-size: 0.875rem; color: #6B7280; margin: 0.25rem 0 0 0; }
+
+/* Cards */
+.card { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.card-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #9CA3AF; margin-bottom: 0.4rem; }
+.card-value { font-size: 1.6rem; font-weight: 700; color: #111827; line-height: 1.1; }
+.card-sub   { font-size: 0.8rem; color: #6B7280; margin-top: 0.3rem; }
+
+/* Metric row */
 .metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-.metric-card { background: #fff; border: 1px solid #E2EAF4; border-radius: 10px; padding: 1.2rem 1.4rem; box-shadow: 0 1px 3px rgba(13,27,42,0.04); }
-.metric-card.blue  { border-left: 3px solid #3B82F6; }
-.metric-card.green { border-left: 3px solid #22C55E; }
-.metric-card.amber { border-left: 3px solid #F59E0B; }
-.metric-card .label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #6B7E8F; margin-bottom: 0.4rem; }
-.metric-card .value { font-size: 1.5rem; font-weight: 600; color: #0D1B2A; }
-.metric-card .sub   { font-size: 0.75rem; color: #6B7E8F; margin-top: 0.2rem; }
-.project-row { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1rem; border: 1px solid #E2EAF4; border-radius: 8px; margin-bottom: 0.4rem; background: #fff; cursor: pointer; transition: all 0.15s; }
+.metric-card { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 1.1rem 1.3rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.metric-card.blue  { border-top: 3px solid #3B82F6; }
+.metric-card.green { border-top: 3px solid #10B981; }
+.metric-card.amber { border-top: 3px solid #F59E0B; }
+.metric-card .label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #9CA3AF; margin-bottom: 0.35rem; }
+.metric-card .value { font-size: 1.4rem; font-weight: 700; color: #111827; }
+.metric-card .sub   { font-size: 0.75rem; color: #6B7280; margin-top: 0.2rem; }
+
+/* Project rows */
+.project-row { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1rem; border: 1px solid #E5E7EB; border-radius: 8px; margin-bottom: 0.35rem; background: #fff; transition: all 0.1s; }
 .project-row:hover { background: #EFF6FF; border-color: #BFDBFE; }
 .project-row.selected { background: #EFF6FF; border-color: #3B82F6; border-left: 3px solid #3B82F6; }
-.project-name { font-size: 0.875rem; font-weight: 500; color: #0D1B2A; }
-.project-sid  { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: #6B7E8F; }
-.project-meta { font-size: 0.75rem; color: #9CA3AF; }
-.section-header { font-size: 0.85rem; font-weight: 600; color: #374151; margin: 1.25rem 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 1px solid #F1F5F9; }
-.stButton > button { background: #1E40AF !important; color: #fff !important; border: none !important; border-radius: 7px !important; padding: 0.5rem 1.25rem !important; font-size: 0.875rem !important; font-weight: 500 !important; }
-.stButton > button:hover { background: #1D3FA0 !important; }
-.page-btn > button { background: #F1F5F9 !important; color: #374151 !important; border: 1px solid #E2EAF4 !important; font-size: 0.8rem !important; padding: 0.35rem 0.75rem !important; }
+.project-name { font-size: 0.875rem; font-weight: 500; color: #111827; }
+.project-sid  { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #6B7280; margin-top: 2px; }
+
+/* Section headers */
+.section-header { font-size: 0.78rem; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: 0.08em; margin: 1.25rem 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 1px solid #F3F4F6; }
+
+/* Buttons */
+.stButton > button { background: #2563EB !important; color: #fff !important; border: none !important; border-radius: 8px !important; padding: 0.45rem 1.1rem !important; font-size: 0.875rem !important; font-weight: 500 !important; letter-spacing: -0.01em !important; transition: background 0.15s !important; }
+.stButton > button:hover { background: #1D4ED8 !important; }
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] { gap: 4px; border-bottom: 2px solid #E5E7EB; }
+.stTabs [data-baseweb="tab"] { font-size: 0.8rem !important; font-weight: 500 !important; padding: 0.5rem 1rem !important; border-radius: 6px 6px 0 0 !important; }
+
+/* Input fields */
+.stTextInput input { border-radius: 8px !important; border: 1px solid #D1D5DB !important; font-size: 0.875rem !important; padding: 0.5rem 0.75rem !important; }
+.stTextInput input:focus { border-color: #3B82F6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.1) !important; }
+
+/* Download button */
+.stDownloadButton > button { background: #059669 !important; border-radius: 8px !important; }
+.stDownloadButton > button:hover { background: #047857 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -246,14 +272,14 @@ elif page == "📁  Projects":
         page_projects = filtered[start:end]
 
         # Stats row
-        st.markdown(f"""
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-            <span style="font-size:0.8rem;color:#6B7E8F;">
-                Showing <strong>{start+1}–{min(end, len(filtered))}</strong> of <strong>{len(filtered):,}</strong> projects
-                {"(filtered)" if search else ""}
-            </span>
-            <span style="font-size:0.8rem;color:#6B7E8F;">Page {current_page+1} of {total_pages}</span>
-        </div>""", unsafe_allow_html=True)
+        filter_label = "(filtered)" if search else ""
+        st.markdown(
+            f"<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;'>"
+            f"<span style='font-size:0.8rem;color:#6B7E8F;'>Showing <strong>{start+1}–{min(end, len(filtered))}</strong> of <strong>{len(filtered):,}</strong> projects {filter_label}</span>"
+            f"<span style='font-size:0.8rem;color:#6B7E8F;'>Page {current_page+1} of {total_pages}</span>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
 
         # ── Project list ──────────────────────────────────────────────────────
         selected_project_sid  = st.session_state.get("selected_project_sid")
@@ -291,7 +317,7 @@ elif page == "📁  Projects":
                     st.session_state["project_page"] = current_page - 1
                     st.rerun()
         with col_info:
-            st.markdown(f"<div style='text-align:center;font-size:0.8rem;color:#6B7E8F;padding-top:0.5rem;'>Page {current_page+1} of {total_pages}</div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align:center;font-size:0.8rem;color:#6B7E8F;padding-top:0.5rem;'>Page {current_page+1} of {total_pages}</p>", unsafe_allow_html=True)
         with col_next:
             if current_page < total_pages - 1:
                 if st.button("Next 20 →"):
@@ -436,8 +462,6 @@ elif page == "📊  Results":
         </div>""", unsafe_allow_html=True)
 
         analysis_type = st.session_state.get("selected_analysis_type", "LOSS")
-
-        st.write(f"DEBUG — analysis_type: {analysis_type} | sid: {analysis_sid}")
 
         if st.button("🚀  Fetch Results"):
             with st.spinner(f"Fetching results for '{analysis_name}'..."):
