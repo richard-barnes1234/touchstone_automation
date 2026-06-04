@@ -135,11 +135,15 @@ def api_haz_results(analysis_sid):
         data = {}
         for k, df in results.items():
             if not df.empty:
-                # Replace NaN with None for JSON serialization
+                df = df.replace([float('inf'), float('-inf')], None)
                 df = df.where(pd.notnull(df), None)
+                rows = []
+                for row in df.values.tolist():
+                    clean = [None if (v != v or v is None) else v for v in row]
+                    rows.append(clean)
                 data[k] = {
                     "columns": list(df.columns),
-                    "rows":    df.values.tolist(),
+                    "rows":    rows,
                     "count":   len(df)
                 }
         return jsonify({"ok": True, "data": data})
