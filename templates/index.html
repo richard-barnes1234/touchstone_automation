@@ -473,7 +473,10 @@ function navigate(pg) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + pg).classList.add('active');
   event.currentTarget.classList.add('active');
-  if (pg === 'results') renderResultsPage();
+  if (pg === 'results') {
+    document.getElementById('selection-toast').classList.remove('show');
+    renderResultsPage();
+  }
   if (pg === 'history') renderHistory();
 }
 
@@ -664,6 +667,7 @@ function goToResults() {
   document.querySelectorAll('.nav-item')[2].classList.add('active');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-results').classList.add('active');
+  document.getElementById('selection-toast').classList.remove('show');
   renderResultsPage();
 }
 
@@ -768,6 +772,20 @@ function buildTable(dataset) {
 async function downloadExcel() {
   const s = state.selected;
   if (!s?.sid || !state.lastResults) return;
+
+  // Build datasets — include ALL categories/sheets
+  const datasets = {};
+  for (const [key, val] of Object.entries(state.lastResults)) {
+    if (val && val.columns && val.rows && val.rows.length > 0) {
+      datasets[key] = val;
+    }
+  }
+
+  if (!Object.keys(datasets).length) {
+    alert('No data to download. Please fetch results first.');
+    return;
+  }
+
   showLoading('Building Excel report...');
   try {
     const body = {
@@ -777,31 +795,31 @@ async function downloadExcel() {
         analysis_name: s.name,
         analysis_type: s.type,
       },
-      datasets: state.lastResults
+      datasets: datasets
     };
     const r = await fetch('/api/download', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    if (!r.ok) throw new Error('Download failed');
-    const blob = await r.blob();
-    const cd   = r.headers.get('Content-Disposition') || '';
+    if (!r.ok) throw new Error('Download failed — ' + r.statusText);
+    const blob  = await r.blob();
+    const cd    = r.headers.get('Content-Disposition') || '';
     const fname = cd.match(/filename="?([^"]+)"?/)?.[1] || 'Touchstone_Report.xlsx';
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
     a.href = url; a.download = fname; a.click();
     URL.revokeObjectURL(url);
     state.reportCount++;
     document.getElementById('stat-reports').textContent = state.reportCount;
-    // Log to history
     state.history.unshift({
-      time: new Date().toLocaleString(),
+      time:    new Date().toLocaleString(),
       project: s.projectName,
-      sid: s.sid,
-      name: s.name,
-      type: s.type,
-      file: fname
+      sid:     s.sid,
+      name:    s.name,
+      type:    s.type,
+      sheets:  Object.keys(datasets).join(', '),
+      file:    fname
     });
   } catch(e) {
     alert('Download failed: ' + e.message);
@@ -818,7 +836,7 @@ function renderHistory() {
   el.innerHTML = `
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Time</th><th>Project</th><th>Analysis SID</th><th>Name</th><th>Type</th><th>File</th></tr></thead>
+        <thead><tr><th>Time</th><th>Project</th><th>SID</th><th>Name</th><th>Type</th><th>Sheets</th><th>File</th></tr></thead>
         <tbody>
           ${state.history.map(h => `
             <tr>
@@ -827,6 +845,7 @@ function renderHistory() {
               <td>${h.sid}</td>
               <td>${escHtml(h.name)}</td>
               <td><span class="tag tag-${h.type.toLowerCase()}">${h.type}</span></td>
+              <td style="font-size:0.72rem;">${escHtml(h.sheets || '—')}</td>
               <td style="font-size:0.72rem;">${escHtml(h.file)}</td>
             </tr>
           `).join('')}
