@@ -240,6 +240,32 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 .empty { text-align: center; padding: 3rem 1rem; color: var(--ink-3); }
 .empty .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .empty p { font-size: 0.875rem; }
+
+/* ── Toast ────────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: #fff;
+  padding: 0.85rem 1.5rem; border-radius: 10px;
+  box-shadow: var(--shadow-lg); z-index: 300;
+  display: none; align-items: center; gap: 1rem;
+  font-size: 0.875rem; font-weight: 500;
+  min-width: 380px; max-width: 600px;
+}
+.toast.show { display: flex; }
+.toast .toast-tag { 
+  padding: 2px 8px; border-radius: 4px; font-size: 0.68rem;
+  font-weight: 700; background: rgba(255,255,255,0.15); 
+  white-space: nowrap;
+}
+.toast .toast-msg { flex: 1; }
+.toast .toast-action {
+  background: #fff; color: var(--accent);
+  border: none; border-radius: 6px;
+  padding: 0.35rem 0.85rem; font-size: 0.8rem;
+  font-weight: 600; cursor: pointer; white-space: nowrap;
+  font-family: var(--font-body);
+}
+.toast .toast-action:hover { background: #F0F4F8; }
 </style>
 </head>
 <body>
@@ -627,12 +653,18 @@ function renderAnalysisList(type) {
 function selectAnalysis(sid, name, type) {
   state.selected = { ...state.selected, sid, name, type };
   state.lastResults = null;
-  // Flash confirmation
-  const banner = document.createElement('div');
-  banner.className = 'alert alert-success';
-  banner.textContent = `✓ ${type} analysis selected — SID ${sid}. Go to Results to fetch data.`;
-  document.getElementById('analyses-section').prepend(banner);
-  setTimeout(() => banner.remove(), 3000);
+  // Show persistent toast
+  document.getElementById('toast-tag').textContent  = type;
+  document.getElementById('toast-msg').textContent  = `${name} (SID: ${sid}) selected`;
+  document.getElementById('selection-toast').classList.add('show');
+}
+
+function goToResults() {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item')[2].classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-results').classList.add('active');
+  renderResultsPage();
 }
 
 // ── Results ────────────────────────────────────────────────────────────────
@@ -814,5 +846,12 @@ const hr = new Date().getHours();
 const greeting = hr < 12 ? 'Good morning.' : hr < 17 ? 'Good afternoon.' : 'Good evening.';
 document.querySelector('#page-home .page-header h2').textContent = greeting;
 </script>
+
+<!-- Persistent selection toast -->
+<div class="toast" id="selection-toast">
+  <span class="toast-tag" id="toast-tag">LOSS</span>
+  <span class="toast-msg" id="toast-msg">Analysis selected</span>
+  <button class="toast-action" onclick="goToResults()">Go to Results →</button>
+</div>
 </body>
 </html>
