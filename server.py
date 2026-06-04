@@ -96,7 +96,7 @@ def build_excel(meta, datasets):
 
 @app.route("/")
 def index():
-    with open("templates/index.html", "r") as f:
+    with open("templates/index.html", "r", encoding="utf-8") as f:
         return f.read()
 
 
@@ -201,4 +201,4 @@ def api_download():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)s
+    app.run(debug=True, host="0.0.0.0", port=5000)
