@@ -73,7 +73,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-PAGE_SIZE = 50
+PAGE_SIZE = 20
 
 # ── Excel builder ─────────────────────────────────────────────────────────────
 def format_sheet(ws):
@@ -287,14 +287,14 @@ elif page == "📁  Projects":
         col_prev, col_info, col_next = st.columns([1, 2, 1])
         with col_prev:
             if current_page > 0:
-                if st.button("← Previous 50"):
+                if st.button("← Previous 20"):
                     st.session_state["project_page"] = current_page - 1
                     st.rerun()
         with col_info:
             st.markdown(f"<div style='text-align:center;font-size:0.8rem;color:#6B7E8F;padding-top:0.5rem;'>Page {current_page+1} of {total_pages}</div>", unsafe_allow_html=True)
         with col_next:
             if current_page < total_pages - 1:
-                if st.button("Next 50 →"):
+                if st.button("Next 20 →"):
                     st.session_state["project_page"] = current_page + 1
                     st.rerun()
 
@@ -302,73 +302,110 @@ elif page == "📁  Projects":
         if selected_project_sid:
             st.markdown(f'<div class="section-header">Analyses — {selected_project_name}</div>', unsafe_allow_html=True)
 
-            col1, col2 = st.columns([1, 4])
-            with col1:
-                if st.button("📋  Load Analyses"):
-                    with st.spinner(f"Fetching analyses for {selected_project_name}..."):
+            # ── Two load buttons side by side ─────────────────────────────────
+            col_loss, col_haz, col_rest = st.columns([1, 1, 3])
+
+            with col_loss:
+                if st.button("📋  Load Loss Analyses"):
+                    with st.spinner("Fetching loss analyses..."):
                         try:
-                            from get_analysis_sids import get_analyses_for_project, get_hazard_analyses_for_project
-                            loss_analyses = get_analyses_for_project(selected_project_sid, selected_project_name)
-                            haz_analyses  = get_hazard_analyses_for_project(selected_project_sid, selected_project_name)
-                            all_analyses  = loss_analyses + haz_analyses
-                            st.session_state["project_analyses"] = all_analyses
-                            st.success(f"✓ {len(loss_analyses)} loss + {len(haz_analyses)} hazard = {len(all_analyses)} total analyses")
+                            from get_analysis_sids import get_analyses_for_project
+                            loss = get_analyses_for_project(selected_project_sid, selected_project_name)
+                            st.session_state["loss_analyses"] = loss
+                            st.session_state["selected_analysis_sid"]  = None
+                            st.session_state["selected_analysis_name"] = None
+                            st.rerun()
                         except Exception as e:
                             st.error(f"Failed: {e}")
 
-            analyses = st.session_state.get("project_analyses")
+            with col_haz:
+                if st.button("⚠️  Load Hazard Analyses"):
+                    with st.spinner("Fetching hazard analyses..."):
+                        try:
+                            from get_analysis_sids import get_hazard_analyses_for_project
+                            haz = get_hazard_analyses_for_project(selected_project_sid, selected_project_name)
+                            st.session_state["haz_analyses"] = haz
+                            st.session_state["selected_analysis_sid"]  = None
+                            st.session_state["selected_analysis_name"] = None
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed: {e}")
 
-            if analyses is not None:
+            loss_analyses = st.session_state.get("loss_analyses")
+            haz_analyses  = st.session_state.get("haz_analyses")
+
+            def render_analysis_list(analyses, section_label, badge_type):
+                """Renders a searchable list of analyses with select buttons"""
+                if analyses is None:
+                    return
+                badge_color = "#DBEAFE" if badge_type == "LOSS" else "#FEF3C7"
+                badge_text  = "#1E40AF" if badge_type == "LOSS" else "#92400E"
+
+                st.markdown(f'<div class="section-header">{section_label} ({len(analyses)})</div>', unsafe_allow_html=True)
+
                 if len(analyses) == 0:
-                    st.info("No completed analyses found for this project.")
-                else:
-                    # Search box
-                    analysis_search = st.text_input(
-                        "Search analyses",
-                        placeholder="Search by Analysis SID or name...",
-                        label_visibility="collapsed",
-                        key="analysis_search_input"
-                    )
+                    st.info(f"No {section_label.lower()} found for this project.")
+                    return
 
-                    # Filter by SID or name
-                    if analysis_search:
-                        filtered_analyses = [
-                            a for a in analyses
-                            if analysis_search.lower() in a["AnalysisName"].lower()
-                            or analysis_search in str(a["AnalysisSid"])
-                        ]
-                    else:
-                        filtered_analyses = analyses
+                # Search
+                search_key = f"search_{badge_type.lower()}"
+                search = st.text_input(
+                    f"Search {section_label}",
+                    placeholder=f"Search by SID or name...",
+                    label_visibility="collapsed",
+                    key=search_key
+                )
 
-                    # Show first 50 of filtered
-                    shown = filtered_analyses[:50]
-                    st.markdown(f"<div style='font-size:0.8rem;color:#6B7E8F;margin-bottom:0.75rem;'>Showing {len(shown)} of {len(filtered_analyses)} analyses{' (filtered)' if analysis_search else ''}</div>", unsafe_allow_html=True)
+                filtered = [
+                    a for a in analyses
+                    if not search
+                    or search.lower() in a["AnalysisName"].lower()
+                    or search in str(a["AnalysisSid"])
+                ]
 
-                    for a in shown:
-                        col_a, col_b = st.columns([5, 1])
-                        with col_a:
-                            a_type      = a.get("AnalysisType", "LOSS")
-                            badge_color = "#DBEAFE" if a_type == "LOSS" else "#FEF3C7"
-                            badge_text  = "#1E40AF" if a_type == "LOSS" else "#92400E"
-                            st.markdown(f"""
-                            <div class="project-row">
-                                <div style="display:flex;align-items:center;gap:0.75rem;">
-                                    <span style="background:{badge_color};color:{badge_text};font-size:0.7rem;font-weight:600;padding:2px 8px;border-radius:4px;">{a_type}</span>
-                                    <div>
-                                        <div class="project-name">{a["AnalysisName"]}</div>
-                                        <div class="project-sid">SID: {a["AnalysisSid"]} &nbsp;·&nbsp; Completed: {a.get("Completed","—")}</div>
-                                    </div>
+                shown = filtered[:20]
+                st.markdown(
+                    f"<div style='font-size:0.8rem;color:#6B7E8F;margin-bottom:0.5rem;'>"
+                    f"Showing {len(shown)} of {len(filtered)}"
+                    f"{' (filtered)' if search else ''}</div>",
+                    unsafe_allow_html=True
+                )
+
+                for a in shown:
+                    col_a, col_b = st.columns([5, 1])
+                    with col_a:
+                        st.markdown(f"""
+                        <div class="project-row">
+                            <div style="display:flex;align-items:center;gap:0.75rem;">
+                                <span style="background:{badge_color};color:{badge_text};font-size:0.7rem;font-weight:600;padding:2px 8px;border-radius:4px;">{badge_type}</span>
+                                <div>
+                                    <div class="project-name">{a["AnalysisName"]}</div>
+                                    <div class="project-sid">SID: {a["AnalysisSid"]} &nbsp;·&nbsp; Completed: {a.get("Completed","—")}</div>
                                 </div>
-                            </div>""", unsafe_allow_html=True)
-                        with col_b:
-                            if st.button("Select", key=f"ana_{a['AnalysisSid']}"):
-                                st.session_state["selected_analysis_sid"]  = a["AnalysisSid"]
-                                st.session_state["selected_analysis_name"] = a["AnalysisName"]
-                                st.session_state["last_results"]           = None
-                                st.rerun()
+                            </div>
+                        </div>""", unsafe_allow_html=True)
+                    with col_b:
+                        if st.button("Select", key=f"ana_{badge_type}_{a['AnalysisSid']}"):
+                            st.session_state["selected_analysis_sid"]  = a["AnalysisSid"]
+                            st.session_state["selected_analysis_name"] = a["AnalysisName"]
+                            st.session_state["selected_analysis_type"] = badge_type
+                            st.session_state["last_results"]           = None
+                            st.rerun()
 
-                    if st.session_state.get("selected_analysis_sid"):
-                        st.success(f"✓ Analysis selected — SID {st.session_state['selected_analysis_sid']} — go to **Results** to fetch data")
+            # ── Render Loss section ───────────────────────────────────────────
+            render_analysis_list(loss_analyses, "Loss Analyses", "LOSS")
+
+            # ── Render Hazard section ─────────────────────────────────────────
+            render_analysis_list(haz_analyses, "Hazard Analyses", "HAZ")
+
+            # ── Selection confirmation ────────────────────────────────────────
+            if st.session_state.get("selected_analysis_sid"):
+                a_type = st.session_state.get("selected_analysis_type", "LOSS")
+                st.success(
+                    f"✓ {a_type} analysis selected — "
+                    f"SID {st.session_state['selected_analysis_sid']} — "
+                    f"go to **Results** to fetch data"
+                )
 
     else:
         st.info("Click **Load Projects** to fetch all projects from Touchstone")
