@@ -437,6 +437,8 @@ elif page == "📊  Results":
 
         analysis_type = st.session_state.get("selected_analysis_type", "LOSS")
 
+        st.write(f"DEBUG — analysis_type: {analysis_type} | sid: {analysis_sid}")
+
         if st.button("🚀  Fetch Results"):
             with st.spinner(f"Fetching results for '{analysis_name}'..."):
                 if analysis_type == "HAZ":
