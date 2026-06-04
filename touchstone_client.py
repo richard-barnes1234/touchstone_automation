@@ -13,6 +13,7 @@ from soap_templates import (
     get_loss_analysis_event_results,
     get_loss_analysis_annual_results,
     get_loss_analysis_summary_results,
+    get_hazard_analysis_results,
 )
 
 
@@ -96,6 +97,64 @@ def get_all_loss_data(analysis_sid):
         results['Loss Summary'] = pd.DataFrame()
 
     return results
+
+
+def get_hazard_results(analysis_sid):
+    """
+    Fetches hazard analysis results for a given HazardAnalysisSid.
+    Returns a dict of DataFrames keyed by hazard category.
+    """
+
+    def _parse(response_text):
+        """
+        Parses HAZ response — groups records by their parent element tag
+        so each hazard category becomes its own DataFrame.
+        """
+        root       = ET.fromstring(response_text)
+        categories = {}
+
+        # Known HAZ result element tags
+        haz_tags = {
+            'EarthquakeHazard', 'HurricaneHazard', 'FloodHazard',
+            'SevereThunderstormHazard', 'ExposureAttributeProfile',
+            'HazardResult', 'LocationHazard'
+        }
+
+        for elem in root.iter():
+            tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+            if tag in haz_tags:
+                record = {}
+                for child in elem:
+                    child_tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+                    record[child_tag] = child.text
+                if record:
+                    if tag not in categories:
+                        categories[tag] = []
+                    categories[tag].append(record)
+
+        # If no known tags found do a broad sweep
+        if not categories:
+            all_tags = set()
+            for elem in root.iter():
+                t = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+                all_tags.add(t)
+            print(f"    ⚠ No HAZ elements found. All tags: {sorted(all_tags)}")
+
+        return {k: pd.DataFrame(v) for k, v in categories.items()}
+
+    try:
+        soap     = get_hazard_analysis_results(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, analysis_sid)
+        response = send_soap_request(soap)
+        if response.status_code == 200:
+            results = _parse(response.text)
+            print(f"    ✓ HAZ results: {list(results.keys())}")
+            return results
+        else:
+            print(f"    ✗ HAZ fetch failed — status {response.status_code}")
+            return {}
+    except Exception as e:
+        print(f"    ✗ HAZ fetch error: {e}")
+        return {}
 
 
 if __name__ == "__main__":

@@ -435,19 +435,35 @@ elif page == "📊  Results":
             <div class="card-sub">Project: {project_name} &nbsp;·&nbsp; Analysis SID: <strong>{analysis_sid}</strong></div>
         </div>""", unsafe_allow_html=True)
 
+        analysis_type = st.session_state.get("selected_analysis_type", "LOSS")
+
         if st.button("🚀  Fetch Results"):
             with st.spinner(f"Fetching results for '{analysis_name}'..."):
-                from touchstone_client import get_all_loss_data
-                results = get_all_loss_data(analysis_sid)
-                st.session_state["last_results"] = results
-                total = sum(len(v) for v in results.values() if not v.empty)
-                log_pull(project_name, analysis_sid, analysis_name, {k: len(v) for k, v in results.items()})
-                if total > 0:
-                    st.success(f"✓ {total:,} total records fetched")
+                if analysis_type == "HAZ":
+                    from touchstone_client import get_hazard_results
+                    haz_results = get_hazard_results(analysis_sid)
+                    st.session_state["last_results"]     = {}
+                    st.session_state["last_haz_results"] = haz_results
+                    total = sum(len(v) for v in haz_results.values())
+                    log_pull(project_name, analysis_sid, analysis_name, {"HAZ": total})
+                    if total > 0:
+                        st.success(f"✓ {total:,} total HAZ records fetched across {len(haz_results)} categories")
+                    else:
+                        st.warning("⚠ No HAZ data returned — check the analysis SID")
                 else:
-                    st.warning("⚠ No data returned for this analysis")
+                    from touchstone_client import get_all_loss_data
+                    results = get_all_loss_data(analysis_sid)
+                    st.session_state["last_results"]     = results
+                    st.session_state["last_haz_results"] = {}
+                    total = sum(len(v) for v in results.values() if not v.empty)
+                    log_pull(project_name, analysis_sid, analysis_name, {k: len(v) for k, v in results.items()})
+                    if total > 0:
+                        st.success(f"✓ {total:,} total records fetched")
+                    else:
+                        st.warning("⚠ No data returned for this analysis")
 
-        if st.session_state.get("last_results"):
+        # ── LOSS Results ──────────────────────────────────────────────────────
+        if analysis_type == "LOSS" and st.session_state.get("last_results"):
             results    = st.session_state["last_results"]
             df_elt     = results.get("ELT",          pd.DataFrame())
             df_ep      = results.get("EP Curves",     pd.DataFrame())
@@ -495,6 +511,44 @@ elif page == "📊  Results":
                     st.caption(f"📄 {filename}")
             else:
                 st.warning("No data available to download")
+
+        # ── HAZ Results ───────────────────────────────────────────────────────
+        elif analysis_type == "HAZ" and st.session_state.get("last_haz_results"):
+            haz_results = st.session_state["last_haz_results"]
+
+            if not haz_results:
+                st.warning("No hazard data returned for this analysis")
+            else:
+                total = sum(len(v) for v in haz_results.values())
+                st.markdown(f"""
+                <div class="metric-row">
+                    <div class="metric-card blue"><div class="label">HAZ categories</div><div class="value">{len(haz_results)}</div><div class="sub">Hazard types returned</div></div>
+                    <div class="metric-card green"><div class="label">Total records</div><div class="value">{total:,}</div><div class="sub">Across all categories</div></div>
+                    <div class="metric-card amber"><div class="label">Analysis type</div><div class="value">HAZ</div><div class="sub">Hazard analysis</div></div>
+                </div>""", unsafe_allow_html=True)
+
+                # One tab per hazard category
+                tab_labels = [f"{cat} ({len(df):,})" for cat, df in haz_results.items()]
+                if tab_labels:
+                    tabs = st.tabs(tab_labels)
+                    for tab, (cat, df) in zip(tabs, haz_results.items()):
+                        with tab:
+                            if not df.empty:
+                                st.dataframe(df, use_container_width=True, height=400)
+                            else:
+                                st.info(f"No data for {cat}")
+
+                # Download
+                st.markdown('<div class="section-header">Download Report</div>', unsafe_allow_html=True)
+                if haz_results:
+                    excel_bytes = build_excel(analysis_sid, analysis_name, project_name, haz_results)
+                    safe_name = "".join(c for c in analysis_name if c.isalnum() or c in " _-")[:40].strip()
+                    filename  = f"Touchstone_HAZ_{safe_name}_{analysis_sid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                    col1, col2 = st.columns([1, 4])
+                    with col1:
+                        st.download_button("⬇  Download HAZ Report", data=excel_bytes, file_name=filename, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    with col2:
+                        st.caption(f"📄 {filename}")
 
 
 # ════════════════════════════════════════════════════════════════════════════
