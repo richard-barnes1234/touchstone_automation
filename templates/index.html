@@ -692,7 +692,16 @@ function goToResults() {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-results').classList.add('active');
   document.getElementById('selection-toast').classList.remove('show');
+  // Clear any previous results so we always fetch fresh for the selected analysis
+  state.lastResults = null;
+  document.getElementById('btn-download').style.display = 'none';
+  document.getElementById('filename-row').style.display = 'none';
+  document.getElementById('results-metrics').style.display = 'none';
+  document.getElementById('results-tabs').style.display = 'none';
+  document.getElementById('results-alert').innerHTML = '';
   renderResultsPage();
+  // Auto-fetch immediately
+  fetchResults();
 }
 
 // ── Results ────────────────────────────────────────────────────────────────
