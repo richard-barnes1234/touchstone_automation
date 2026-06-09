@@ -241,6 +241,43 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 .empty .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .empty p { font-size: 0.875rem; }
 
+/* ── Column selector ─────────────────────────────────────── */
+.col-selector {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.col-selector-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.col-selector-title { font-size: 0.78rem; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.08em; }
+.col-selector-actions { display: flex; gap: 0.5rem; }
+.col-selector-actions button {
+  font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--ink-2); cursor: pointer; font-family: var(--font-body);
+}
+.col-selector-actions button:hover { background: var(--border); color: var(--ink); }
+.col-grid {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; max-height: 160px;
+  overflow-y: auto; padding: 2px;
+}
+.col-chip {
+  display: flex; align-items: center; gap: 0.3rem;
+  padding: 0.25rem 0.6rem; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--bg);
+  font-size: 0.72rem; font-family: var(--font-mono);
+  color: var(--ink-2); cursor: pointer; user-select: none;
+  transition: all 0.12s;
+}
+.col-chip input { display: none; }
+.col-chip.selected {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff;
+}
+.col-chip:hover { border-color: var(--accent-2); }
+
 /* ── Filename input ───────────────────────────────────────── */
 .filename-row {
   display: flex; align-items: center; gap: 0.75rem;
@@ -452,6 +489,10 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 
       <div id="results-alert"></div>
       <div id="results-metrics" style="display:none;"></div>
+      <div id="col-selector-wrap" style="display:none;">
+        <div class="section-label">Column selection</div>
+        <div id="col-selectors"></div>
+      </div>
       <div id="results-tabs" style="display:none;"></div>
     </div>
   </div>
@@ -680,6 +721,8 @@ function selectAnalysis(sid, name, type) {
   state.lastResults = null;
   document.getElementById('btn-download').style.display = 'none';
   document.getElementById('filename-row').style.display = 'none';
+  document.getElementById('col-selector-wrap').style.display = 'none';
+  state.selectedCols = {};
   // Show persistent toast
   document.getElementById('toast-tag').textContent  = type;
   document.getElementById('toast-msg').textContent  = `${name} (SID: ${sid}) selected`;
@@ -696,6 +739,8 @@ function goToResults() {
   state.lastResults = null;
   document.getElementById('btn-download').style.display = 'none';
   document.getElementById('filename-row').style.display = 'none';
+  document.getElementById('col-selector-wrap').style.display = 'none';
+  state.selectedCols = {};
   document.getElementById('results-metrics').style.display = 'none';
   document.getElementById('results-tabs').style.display = 'none';
   document.getElementById('results-alert').innerHTML = '';
@@ -752,9 +797,8 @@ async function fetchResults() {
 }
 
 function renderResultsData(data, type) {
-  const keys    = Object.keys(data);
-  const totals  = keys.map(k => data[k].count);
-  const total   = totals.reduce((a,b) => a+b, 0);
+  const keys  = Object.keys(data);
+  const total = keys.reduce((a,k) => a + (data[k].count||0), 0);
 
   // Metrics
   const metricsEl = document.getElementById('results-metrics');
@@ -762,35 +806,89 @@ function renderResultsData(data, type) {
   metricsEl.className = 'metrics';
 
   if (type === 'LOSS') {
-    const elt  = data['ELT']         || { count: 0 };
-    const ep   = data['EP Curves']   || { count: 0 };
-    const summ = data['Loss Summary']|| { count: 0 };
+    const elt  = data['ELT']          || { count: 0 };
+    const ep   = data['EP Curves']    || { count: 0 };
+    const summ = data['Loss Summary'] || { count: 0 };
     metricsEl.innerHTML = `
       <div class="metric"><div class="metric-label">ELT Records</div><div class="metric-value">${elt.count.toLocaleString()}</div><div class="metric-sub">Event loss table</div></div>
       <div class="metric green"><div class="metric-label">EP Curves</div><div class="metric-value">${ep.count.toLocaleString()}</div><div class="metric-sub">Annual EP data</div></div>
-      <div class="metric amber"><div class="metric-label">Loss Summary</div><div class="metric-value">${summ.count.toLocaleString()}</div><div class="metric-sub">EP distribution</div></div>
-    `;
+      <div class="metric amber"><div class="metric-label">Loss Summary</div><div class="metric-value">${summ.count.toLocaleString()}</div><div class="metric-sub">EP distribution</div></div>`;
   } else {
     metricsEl.innerHTML = `
       <div class="metric"><div class="metric-label">HAZ Categories</div><div class="metric-value">${keys.length}</div><div class="metric-sub">Hazard types</div></div>
       <div class="metric green"><div class="metric-label">Total Records</div><div class="metric-value">${total.toLocaleString()}</div><div class="metric-sub">Across all categories</div></div>
-      <div class="metric amber"><div class="metric-label">Analysis Type</div><div class="metric-value" style="font-size:1rem;">Hazard</div><div class="metric-sub">HAZ analysis</div></div>
-    `;
+      <div class="metric amber"><div class="metric-label">Analysis Type</div><div class="metric-value" style="font-size:1rem;">Hazard</div><div class="metric-sub">HAZ analysis</div></div>`;
   }
+
+  // Column selectors — one per dataset
+  state.selectedCols = {};
+  const csWrap = document.getElementById('col-selector-wrap');
+  const csEl   = document.getElementById('col-selectors');
+  csWrap.style.display = 'block';
+  csEl.innerHTML = keys.map(k => {
+    const cols = data[k].columns || [];
+    state.selectedCols[k] = new Set(cols); // all selected by default
+    return `
+      <div class="col-selector">
+        <div class="col-selector-header">
+          <span class="col-selector-title">${k} — ${cols.length} columns</span>
+          <div class="col-selector-actions">
+            <button onclick="selectAllCols('${k}', true)">Select all</button>
+            <button onclick="selectAllCols('${k}', false)">Clear all</button>
+          </div>
+        </div>
+        <div class="col-grid" id="col-grid-${k.replace(/ /g,'_')}">
+          ${cols.map(c => `
+            <label class="col-chip selected">
+              <input type="checkbox" checked onchange="toggleCol('${k}','${escHtml(c)}',this.checked)"/>
+              ${escHtml(c)}
+            </label>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
 
   // Tabs
   const tabsEl = document.getElementById('results-tabs');
   tabsEl.style.display = 'block';
-  const tabBtns   = keys.map((k,i) => `<button class="tab-btn ${i===0?'active':''}" onclick="switchTab(${i},${keys.length})">${k} (${data[k].count.toLocaleString()})</button>`).join('');
+  const tabBtns   = keys.map((k,i) => `<button class="tab-btn ${i===0?'active':''}" onclick="switchTab(${i})">${k} (${(data[k].count||0).toLocaleString()})</button>`).join('');
   const tabPanels = keys.map((k,i) => `
     <div class="tab-panel ${i===0?'active':''}" id="tab-panel-${i}">
       <div class="table-wrap">${buildTable(data[k])}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
   tabsEl.innerHTML = `<div class="tabs">${tabBtns}</div>${tabPanels}`;
 }
 
-function switchTab(idx, total) {
+function toggleCol(dataset, col, checked) {
+  if (!state.selectedCols) return;
+  if (!state.selectedCols[dataset]) state.selectedCols[dataset] = new Set();
+  checked ? state.selectedCols[dataset].add(col) : state.selectedCols[dataset].delete(col);
+  // Update chip style
+  const gridId = 'col-grid-' + dataset.replace(/ /g,'_');
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.querySelectorAll('.col-chip').forEach(chip => {
+    const label = chip.textContent.trim();
+    chip.classList.toggle('selected', state.selectedCols[dataset].has(label));
+  });
+}
+
+function selectAllCols(dataset, selectAll) {
+  const cols = state.lastResults?.[dataset]?.columns || [];
+  if (selectAll) {
+    state.selectedCols[dataset] = new Set(cols);
+  } else {
+    state.selectedCols[dataset] = new Set();
+  }
+  const gridId = 'col-grid-' + dataset.replace(/ /g,'_');
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.querySelectorAll('.col-chip').forEach(chip => {
+    chip.classList.toggle('selected', selectAll);
+    chip.querySelector('input').checked = selectAll;
+  });
+}
+
+function switchTab(idx) {
   document.querySelectorAll('.tab-btn').forEach((b,i)   => b.classList.toggle('active', i===idx));
   document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', i===idx));
 }
@@ -810,12 +908,22 @@ async function downloadExcel() {
   const s = state.selected;
   if (!s?.sid || !state.lastResults) return;
 
-  // Build datasets — include ALL categories/sheets
+  // Build datasets — filter to selected columns only
   const datasets = {};
   for (const [key, val] of Object.entries(state.lastResults)) {
-    if (val && val.columns && val.rows && val.rows.length > 0) {
-      datasets[key] = val;
-    }
+    if (!val || !val.columns || !val.rows || !val.rows.length) continue;
+    const selectedCols = state.selectedCols?.[key];
+    if (!selectedCols || selectedCols.size === 0) continue; // skip if nothing selected
+    // Filter columns and rows
+    const colIndices = val.columns
+      .map((c, i) => ({ c, i }))
+      .filter(({ c }) => selectedCols.has(c));
+    if (!colIndices.length) continue;
+    datasets[key] = {
+      columns: colIndices.map(({ c }) => c),
+      rows:    val.rows.map(row => colIndices.map(({ i }) => row[i])),
+      count:   val.count
+    };
   }
 
   if (!Object.keys(datasets).length) {
