@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Touchstone · Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Figtree:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:        #F4F3EF;
+  --surface:   #FFFFFF;
+  --border:    #E2DDD6;
+  --ink:       #1A1814;
+  --ink-2:     #6B6560;
+  --ink-3:     #A09A94;
+  --accent:    #1E3A5F;
+  --accent-2:  #2E5B9A;
+  --green:     #0D6B4E;
+  --amber:     #92400E;
+  --red:       #991B1B;
+  --tag-loss:  #DBEAFE;
+  --tag-loss-t:#1E40AF;
+  --tag-haz:   #FEF3C7;
+  --tag-haz-t: #92400E;
+  --radius:    10px;
+  --shadow:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.10);
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'Figtree', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --sidebar-w: 240px;
+}
+
+body { font-family: var(--font-body); background: var(--bg); color: var(--ink); min-height: 100vh; display: flex; }
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w); min-height: 100vh; background: var(--accent);
+  display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0;
+  z-index: 100;
+}
+.sidebar-brand {
+  padding: 1.75rem 1.5rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-brand h1 {
+  font-family: var(--font-head); font-size: 1.25rem; font-weight: 800;
+  color: #fff; letter-spacing: -0.02em;
+}
+.sidebar-brand p { font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
+.sidebar-nav { padding: 1rem 0.75rem; flex: 1; }
+.nav-item {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.55rem 0.75rem; border-radius: 7px;
+  font-size: 0.875rem; font-weight: 500; color: rgba(255,255,255,0.6);
+  cursor: pointer; transition: all 0.15s; margin-bottom: 2px;
+  border: none; background: none; width: 100%; text-align: left;
+}
+.nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-item.active { background: rgba(255,255,255,0.14); color: #fff; }
+.nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+.sidebar-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.7rem; color: rgba(255,255,255,0.3);
+  font-family: var(--font-mono);
+}
+
+/* ── Main ─────────────────────────────────────────────────── */
+.main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
+.page { display: none; padding: 2rem 2.5rem; max-width: 1280px; }
+.page.active { display: block; }
+
+/* ── Page Header ──────────────────────────────────────────── */
+.page-header { margin-bottom: 1.75rem; }
+.page-header h2 {
+  font-family: var(--font-head); font-size: 1.75rem; font-weight: 700;
+  color: var(--ink); letter-spacing: -0.03em;
+}
+.page-header p { font-size: 0.875rem; color: var(--ink-2); margin-top: 0.25rem; }
+
+/* ── Cards ────────────────────────────────────────────────── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow);
+}
+.card + .card { margin-top: 1rem; }
+
+/* ── Metric Grid ──────────────────────────────────────────── */
+.metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.metric {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.1rem 1.25rem;
+  box-shadow: var(--shadow); position: relative; overflow: hidden;
+}
+.metric::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--accent);
+}
+.metric.green::before { background: #10B981; }
+.metric.amber::before { background: #F59E0B; }
+.metric-label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-3); margin-bottom: 0.4rem; }
+.metric-value { font-family: var(--font-head); font-size: 1.6rem; font-weight: 700; color: var(--ink); line-height: 1; }
+.metric-sub { font-size: 0.75rem; color: var(--ink-2); margin-top: 0.3rem; }
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 1.1rem; border-radius: 7px; font-size: 0.875rem;
+  font-weight: 500; font-family: var(--font-body);
+  border: none; cursor: pointer; transition: all 0.15s; text-decoration: none;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-2); }
+.btn-secondary { background: var(--surface); color: var(--ink); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-success { background: #059669; color: #fff; }
+.btn-success:hover { background: #047857; }
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Section label ────────────────────────────────────────── */
+.section-label {
+  font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ink-3);
+  margin: 1.5rem 0 0.75rem; padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Search ───────────────────────────────────────────────── */
+.search-wrap { position: relative; margin-bottom: 1rem; }
+.search-wrap input {
+  width: 100%; padding: 0.6rem 0.9rem 0.6rem 2.2rem;
+  border: 1px solid var(--border); border-radius: 8px;
+  font-size: 0.875rem; font-family: var(--font-body);
+  background: var(--surface); color: var(--ink);
+  outline: none; transition: border 0.15s;
+}
+.search-wrap input:focus { border-color: var(--accent-2); box-shadow: 0 0 0 3px rgba(46,91,154,0.1); }
+.search-icon { position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); color: var(--ink-3); font-size: 0.9rem; }
+
+/* ── Project / Analysis rows ──────────────────────────────── */
+.row-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.7rem 1rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px;
+  margin-bottom: 0.35rem; transition: all 0.12s;
+}
+.row-item:hover { border-color: #BFDBFE; background: #EFF6FF; }
+.row-item.selected { border-color: var(--accent-2); background: #EFF6FF; border-left: 3px solid var(--accent-2); }
+.row-name { font-size: 0.875rem; font-weight: 500; color: var(--ink); }
+.row-meta { font-size: 0.72rem; color: var(--ink-2); margin-top: 2px; font-family: var(--font-mono); }
+
+/* ── Tags ─────────────────────────────────────────────────── */
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;
+}
+.tag-loss { background: var(--tag-loss); color: var(--tag-loss-t); }
+.tag-haz  { background: var(--tag-haz);  color: var(--tag-haz-t); }
+
+/* ── Pagination ───────────────────────────────────────────── */
+.pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border);
+}
+.page-info { font-size: 0.8rem; color: var(--ink-2); }
+
+/* ── Table ────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: var(--surface); }
+thead th {
+  background: var(--accent); color: #fff; padding: 0.65rem 0.9rem;
+  text-align: left; font-weight: 600; font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+}
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:nth-child(even) { background: #F9F8F6; }
+tbody tr:hover { background: #EFF6FF; }
+tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font-family: var(--font-mono); font-size: 0.78rem; }
+
+/* ── Tabs ─────────────────────────────────────────────────── */
+.tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 1rem; overflow-x: auto; }
+.tab-btn {
+  padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500;
+  border: none; background: none; cursor: pointer; color: var(--ink-2);
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  white-space: nowrap; transition: all 0.15s; font-family: var(--font-body);
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Status / Alert ───────────────────────────────────────── */
+.alert {
+  padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.875rem;
+  margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.alert-info    { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+.alert-success { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+.alert-error   { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+.alert-warn    { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }
+
+/* ── Spinner ──────────────────────────────────────────────── */
+.spinner {
+  width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.7s linear infinite; display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(244,243,239,0.8);
+  backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center;
+  flex-direction: column; gap: 0.75rem;
+}
+.loading-overlay.show { display: flex; }
+.loading-text { font-family: var(--font-head); font-size: 1rem; color: var(--accent); }
+
+/* ── Selected analysis banner ─────────────────────────────── */
+.analysis-banner {
+  background: var(--accent); color: #fff; border-radius: var(--radius);
+  padding: 1rem 1.25rem; margin-bottom: 1.25rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.analysis-banner .label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.6; }
+.analysis-banner .name  { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; margin-top: 2px; }
+.analysis-banner .meta  { font-size: 0.78rem; opacity: 0.7; margin-top: 4px; font-family: var(--font-mono); }
+
+/* ── Two column layout ────────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+
+/* ── Empty state ──────────────────────────────────────────── */
+.empty { text-align: center; padding: 3rem 1rem; color: var(--ink-3); }
+.empty .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.empty p { font-size: 0.875rem; }
+
+/* ── Column selector ─────────────────────────────────────── */
+.col-selector {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.col-selector-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.col-selector-title { font-size: 0.78rem; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.08em; }
+.col-selector-actions { display: flex; gap: 0.5rem; }
+.col-selector-actions button {
+  font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--ink-2); cursor: pointer; font-family: var(--font-body);
+}
+.col-selector-actions button:hover { background: var(--border); color: var(--ink); }
+.col-grid {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; max-height: 160px;
+  overflow-y: auto; padding: 2px;
+}
+.col-chip {
+  display: flex; align-items: center; gap: 0.3rem;
+  padding: 0.25rem 0.6rem; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--bg);
+  font-size: 0.72rem; font-family: var(--font-mono);
+  color: var(--ink-2); cursor: pointer; user-select: none;
+  transition: all 0.12s;
+}
+.col-chip input { display: none; }
+.col-chip.selected {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff;
+}
+.col-chip:hover { border-color: var(--accent-2); }
+
+/* ── Filename input ───────────────────────────────────────── */
+.filename-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-bottom: 1rem; padding: 0.85rem 1rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.filename-row label { font-size: 0.8rem; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+.filename-row input {
+  flex: 1; padding: 0.45rem 0.75rem; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 0.875rem; font-family: var(--font-mono);
+  color: var(--ink); outline: none; transition: border 0.15s;
+}
+.filename-row input:focus { border-color: var(--accent-2); box-shadow: 0 0 0 3px rgba(46,91,154,0.1); }
+.filename-row .ext { font-size: 0.8rem; color: var(--ink-3); font-family: var(--font-mono); }
+
+/* ── Toast ────────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: #fff;
+  padding: 0.85rem 1.5rem; border-radius: 10px;
+  box-shadow: var(--shadow-lg); z-index: 300;
+  display: none; align-items: center; gap: 1rem;
+  font-size: 0.875rem; font-weight: 500;
+  min-width: 380px; max-width: 600px;
+}
+.toast.show { display: flex; }
+.toast .toast-tag { 
+  padding: 2px 8px; border-radius: 4px; font-size: 0.68rem;
+  font-weight: 700; background: rgba(255,255,255,0.15); 
+  white-space: nowrap;
+}
+.toast .toast-msg { flex: 1; }
+.toast .toast-action {
+  background: #fff; color: var(--accent);
+  border: none; border-radius: 6px;
+  padding: 0.35rem 0.85rem; font-size: 0.8rem;
+  font-weight: 600; cursor: pointer; white-space: nowrap;
+  font-family: var(--font-body);
+}
+.toast .toast-action:hover { background: #F0F4F8; }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner" style="border-color:rgba(30,58,95,0.2);border-top-color:var(--accent);width:32px;height:32px;border-width:3px;"></div>
+  <div class="loading-text" id="loading-text">Loading...</div>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <h1>Touchstone</h1>
+    <p>Results Dashboard</p>
+  </div>
+  <nav class="sidebar-nav">
+    <button class="nav-item active" onclick="navigate('home')">
+      <span class="icon">⬡</span> Home
+    </button>
+    <button class="nav-item" onclick="navigate('projects')">
+      <span class="icon">◫</span> Projects
+    </button>
+    <button class="nav-item" onclick="navigate('results')">
+      <span class="icon">◈</span> Results
+    </button>
+    <button class="nav-item" onclick="navigate('history')">
+      <span class="icon">◷</span> History
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    AIR Cloud · SOAP API<br>
+    <span id="sidebar-project-info" style="opacity:0.6;"></span>
+  </div>
+</aside>
+
+<!-- Main content -->
+<main class="main">
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="page-header">
+      <h2>Good morning.</h2>
+      <p>Pull catastrophe model results directly from Touchstone — no manual copy-paste required.</p>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Projects loaded</div>
+        <div class="metric-value" id="stat-projects">—</div>
+        <div class="metric-sub">From Touchstone API</div>
+      </div>
+      <div class="metric green">
+        <div class="metric-label">Reports downloaded</div>
+        <div class="metric-value" id="stat-reports">0</div>
+        <div class="metric-sub">This session</div>
+      </div>
+      <div class="metric amber">
+        <div class="metric-label">Data source</div>
+        <div class="metric-value" style="font-size:1rem;">SOAP API</div>
+        <div class="metric-sub">Touchstone AIR Cloud</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">How to use</div>
+      <ol style="padding-left:1.2rem;line-height:2.2;font-size:0.875rem;color:var(--ink-2);">
+        <li>Go to <strong style="color:var(--ink);">Projects</strong> — load and search all 2,000+ projects</li>
+        <li>Select a project — load Loss or Hazard analyses separately</li>
+        <li>Select an analysis — go to <strong style="color:var(--ink);">Results</strong></li>
+        <li>Click <strong style="color:var(--ink);">Fetch Results</strong> — data pulled from Touchstone automatically</li>
+        <li>Click <strong style="color:var(--ink);">Download Excel Report</strong></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="page" id="page-projects">
+    <div class="page-header">
+      <h2>Projects</h2>
+      <p>Browse and search all projects — select one to load its analyses</p>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="loadProjects()">
+        ↻ Load Projects
+      </button>
+      <span id="projects-count" style="font-size:0.8rem;color:var(--ink-2);align-self:center;"></span>
+    </div>
+
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="project-search" placeholder="Search projects by name..." oninput="filterProjects()" />
+    </div>
+
+    <div id="project-list"></div>
+
+    <div class="pagination" id="project-pagination" style="display:none;">
+      <button class="btn btn-secondary btn-sm" id="btn-prev" onclick="changePage(-1)">← Previous</button>
+      <span class="page-info" id="page-info"></span>
+      <button class="btn btn-secondary btn-sm" id="btn-next" onclick="changePage(1)">Next →</button>
+    </div>
+
+    <!-- Analyses section -->
+    <div id="analyses-section" style="display:none;">
+      <div class="section-label" id="analyses-label">Analyses</div>
+
+      <div class="two-col">
+        <div>
+          <div class="btn-row">
+            <button class="btn btn-primary btn-sm" onclick="loadLossAnalyses()">📋 Load Loss Analyses</button>
+            <span id="loss-count" style="font-size:0.75rem;color:var(--ink-2);align-self:center;"></span>
+          </div>
+          <div class="search-wrap">
+            <span class="search-icon">⌕</span>
+            <input type="text" id="loss-search" placeholder="Search loss analyses..." oninput="filterLoss()" />
+          </div>
+          <div id="loss-list"></div>
+        </div>
+        <div>
+          <div class="btn-row">
+            <button class="btn btn-sm" style="background:var(--tag-haz);color:var(--tag-haz-t);font-weight:600;" onclick="loadHazAnalyses()">⚠ Load Hazard Analyses</button>
+            <span id="haz-count" style="font-size:0.75rem;color:var(--ink-2);align-self:center;"></span>
+          </div>
+          <div class="search-wrap">
+            <span class="search-icon">⌕</span>
+            <input type="text" id="haz-search" placeholder="Search hazard analyses..." oninput="filterHaz()" />
+          </div>
+          <div id="haz-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="page" id="page-results">
+    <div class="page-header">
+      <h2>Results</h2>
+      <p>Fetch and download results for the selected analysis</p>
+    </div>
+
+    <div id="no-selection" class="alert alert-info">
+      ℹ No analysis selected — go to <strong>Projects</strong> to select one first.
+    </div>
+
+    <div id="results-content" style="display:none;">
+      <div class="analysis-banner" id="analysis-banner">
+        <div>
+          <div class="label">Selected Analysis</div>
+          <div class="name" id="banner-name">—</div>
+          <div class="meta" id="banner-meta">—</div>
+        </div>
+        <div>
+          <span id="banner-tag" class="tag"></span>
+        </div>
+      </div>
+
+      <div class="filename-row" id="filename-row" style="display:none;">
+        <label>File name</label>
+        <input type="text" id="custom-filename" placeholder="e.g. DefaultUW_ELT_Report" />
+        <span class="ext">.xlsx</span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="fetchResults()">⚡ Fetch Results</button>
+        <button class="btn btn-success" id="btn-download" onclick="downloadExcel()" style="display:none;">⬇ Download Excel</button>
+      </div>
+
+      <div id="results-alert"></div>
+      <div id="results-metrics" style="display:none;"></div>
+      <div id="col-selector-wrap" style="display:none;">
+        <div class="section-label">Column selection</div>
+        <div id="col-selectors"></div>
+      </div>
+      <div id="results-tabs" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div class="page-header">
+      <h2>History</h2>
+      <p>Reports downloaded this session</p>
+    </div>
+    <div id="history-content">
+      <div class="empty">
+        <div class="icon">◷</div>
+        <p>No reports downloaded yet.<br>Go to Results to fetch and download data.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  projects:       [],
+  filtered:       [],
+  page:           0,
+  pageSize:       20,
+  lossAnalyses:   [],
+  hazAnalyses:    [],
+  lossFiltered:   [],
+  hazFiltered:    [],
+  selected:       null,   // { sid, name, type, projectName }
+  lastResults:    null,
+  reportCount:    0,
+  history:        [],
+};
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function navigate(pg) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + pg).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (pg === 'results') {
+    document.getElementById('selection-toast').classList.remove('show');
+    renderResultsPage();
+  }
+  if (pg === 'history') renderHistory();
+}
+
+// ── Loading ────────────────────────────────────────────────────────────────
+function showLoading(text='Loading...') {
+  document.getElementById('loading-text').textContent = text;
+  document.getElementById('loading').classList.add('show');
+}
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+// ── Projects ───────────────────────────────────────────────────────────────
+async function loadProjects() {
+  showLoading('Loading 2,000+ projects...');
+  try {
+    const r = await fetch('/api/projects');
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error);
+    state.projects = j.data;
+    state.filtered = j.data;
+    state.page     = 0;
+    document.getElementById('projects-count').textContent = `${j.count.toLocaleString()} projects`;
+    document.getElementById('stat-projects').textContent  = j.count.toLocaleString();
+    renderProjectList();
+  } catch(e) {
+    alert('Failed to load projects: ' + e.message);
+  } finally { hideLoading(); }
+}
+
+function filterProjects() {
+  const q = document.getElementById('project-search').value.toLowerCase();
+  state.filtered = q
+    ? state.projects.filter(p => p.ProjectName.toLowerCase().includes(q))
+    : state.projects;
+  state.page = 0;
+  renderProjectList();
+}
+
+function renderProjectList() {
+  const { filtered, page, pageSize } = state;
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / pageSize);
+  const start = page * pageSize;
+  const slice = filtered.slice(start, start + pageSize);
+
+  const list = document.getElementById('project-list');
+  if (!slice.length) {
+    list.innerHTML = '<div class="empty"><div class="icon">◫</div><p>No projects found.</p></div>';
+    document.getElementById('project-pagination').style.display = 'none';
+    return;
+  }
+
+  list.innerHTML = slice.map(p => `
+    <div class="row-item ${state.selected?.projectSid === p.ProjectSid ? 'selected' : ''}" 
+         onclick="selectProject('${p.ProjectSid}', '${escHtml(p.ProjectName)}')">
+      <div>
+        <div class="row-name">${escHtml(p.ProjectName)}</div>
+        <div class="row-meta">SID: ${p.ProjectSid}</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();selectProject('${p.ProjectSid}','${escHtml(p.ProjectName)}')">
+        Select
+      </button>
+    </div>
+  `).join('');
+
+  // Pagination
+  const pg = document.getElementById('project-pagination');
+  pg.style.display = 'flex';
+  document.getElementById('page-info').textContent = `${start+1}–${Math.min(start+pageSize, total)} of ${total.toLocaleString()}`;
+  document.getElementById('btn-prev').disabled = page === 0;
+  document.getElementById('btn-next').disabled = page >= totalPages - 1;
+}
+
+function changePage(dir) {
+  state.page += dir;
+  renderProjectList();
+  document.getElementById('project-list').scrollIntoView({behavior:'smooth'});
+}
+
+function selectProject(sid, name) {
+  state.selected = { ...state.selected, projectSid: sid, projectName: name };
+  state.lossAnalyses = [];
+  state.hazAnalyses  = [];
+  state.lossFiltered = [];
+  state.hazFiltered  = [];
+  document.getElementById('analyses-section').style.display = 'block';
+  document.getElementById('analyses-label').textContent = `Analyses — ${name}`;
+  document.getElementById('loss-list').innerHTML = '';
+  document.getElementById('haz-list').innerHTML  = '';
+  document.getElementById('loss-count').textContent = '';
+  document.getElementById('haz-count').textContent  = '';
+  document.getElementById('sidebar-project-info').textContent = name;
+  renderProjectList();
+  document.getElementById('analyses-section').scrollIntoView({behavior:'smooth'});
+}
+
+// ── Loss Analyses ──────────────────────────────────────────────────────────
+async function loadLossAnalyses() {
+  if (!state.selected?.projectSid) return;
+  showLoading('Fetching loss analyses...');
+  try {
+    const url = `/api/analyses/loss/${state.selected.projectSid}?project_name=${encodeURIComponent(state.selected.projectName)}`;
+    const r = await fetch(url);
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error);
+    state.lossAnalyses = j.data;
+    state.lossFiltered = j.data;
+    document.getElementById('loss-count').textContent = `${j.count} found`;
+    renderAnalysisList('loss');
+  } catch(e) {
+    document.getElementById('loss-list').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
+  } finally { hideLoading(); }
+}
+
+async function loadHazAnalyses() {
+  if (!state.selected?.projectSid) return;
+  showLoading('Fetching hazard analyses...');
+  try {
+    const url = `/api/analyses/haz/${state.selected.projectSid}?project_name=${encodeURIComponent(state.selected.projectName)}`;
+    const r = await fetch(url);
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error);
+    state.hazAnalyses = j.data;
+    state.hazFiltered = j.data;
+    document.getElementById('haz-count').textContent = `${j.count} found`;
+    renderAnalysisList('haz');
+  } catch(e) {
+    document.getElementById('haz-list').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
+  } finally { hideLoading(); }
+}
+
+function filterLoss() {
+  const q = document.getElementById('loss-search').value.toLowerCase();
+  state.lossFiltered = q
+    ? state.lossAnalyses.filter(a => a.AnalysisName.toLowerCase().includes(q) || String(a.AnalysisSid).includes(q))
+    : state.lossAnalyses;
+  renderAnalysisList('loss');
+}
+
+function filterHaz() {
+  const q = document.getElementById('haz-search').value.toLowerCase();
+  state.hazFiltered = q
+    ? state.hazAnalyses.filter(a => a.AnalysisName.toLowerCase().includes(q) || String(a.AnalysisSid).includes(q))
+    : state.hazAnalyses;
+  renderAnalysisList('haz');
+}
+
+function renderAnalysisList(type) {
+  const arr  = type === 'loss' ? state.lossFiltered : state.hazFiltered;
+  const el   = document.getElementById(type + '-list');
+  const shown = arr.slice(0, 20);
+
+  if (!shown.length) {
+    el.innerHTML = '<div class="empty"><p>No analyses found.</p></div>';
+    return;
+  }
+
+  el.innerHTML = shown.map(a => `
+    <div class="row-item" onclick="selectAnalysis('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')">
+      <div>
+        <div class="row-name">
+          <span class="tag tag-${type}" style="margin-right:6px;">${type.toUpperCase()}</span>
+          ${escHtml(a.AnalysisName)}
+        </div>
+        <div class="row-meta">SID: ${a.AnalysisSid} &nbsp;·&nbsp; ${a.Status || '—'}</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();selectAnalysis('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')">
+        Select →
+      </button>
+    </div>
+  `).join('');
+
+  if (arr.length > 20) {
+    el.innerHTML += `<div class="page-info" style="padding:0.5rem 0;">Showing 20 of ${arr.length} — use search to filter</div>`;
+  }
+}
+
+function selectAnalysis(sid, name, type) {
+  state.selected = { ...state.selected, sid, name, type };
+  state.lastResults = null;
+  document.getElementById('btn-download').style.display = 'none';
+  document.getElementById('filename-row').style.display = 'none';
+  document.getElementById('col-selector-wrap').style.display = 'none';
+  state.selectedCols = {};
+  // Show persistent toast
+  document.getElementById('toast-tag').textContent  = type;
+  document.getElementById('toast-msg').textContent  = `${name} (SID: ${sid}) selected`;
+  document.getElementById('selection-toast').classList.add('show');
+}
+
+function goToResults() {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item')[2].classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-results').classList.add('active');
+  document.getElementById('selection-toast').classList.remove('show');
+  // Clear any previous results so we always fetch fresh for the selected analysis
+  state.lastResults = null;
+  document.getElementById('btn-download').style.display = 'none';
+  document.getElementById('filename-row').style.display = 'none';
+  document.getElementById('col-selector-wrap').style.display = 'none';
+  state.selectedCols = {};
+  document.getElementById('results-metrics').style.display = 'none';
+  document.getElementById('results-tabs').style.display = 'none';
+  document.getElementById('results-alert').innerHTML = '';
+  renderResultsPage();
+  // Auto-fetch immediately
+  fetchResults();
+}
+
+// ── Results ────────────────────────────────────────────────────────────────
+function renderResultsPage() {
+  const s = state.selected;
+  if (!s?.sid) {
+    document.getElementById('no-selection').style.display = 'flex';
+    document.getElementById('results-content').style.display = 'none';
+    return;
+  }
+  document.getElementById('no-selection').style.display = 'none';
+  document.getElementById('results-content').style.display = 'block';
+  document.getElementById('banner-name').textContent = s.name;
+  document.getElementById('banner-meta').textContent = `Project: ${s.projectName} · SID: ${s.sid}`;
+  const tag = document.getElementById('banner-tag');
+  tag.textContent = s.type;
+  tag.className = `tag tag-${s.type.toLowerCase()}`;
+
+  // If we have cached results show them
+  if (state.lastResults) renderResultsData(state.lastResults, s.type);
+}
+
+async function fetchResults() {
+  const s = state.selected;
+  if (!s?.sid) return;
+  showLoading(`Fetching ${s.type} results for SID ${s.sid}...`);
+  document.getElementById('results-alert').innerHTML = '';
+  document.getElementById('results-metrics').style.display = 'none';
+  document.getElementById('results-tabs').style.display = 'none';
+  document.getElementById('btn-download').style.display = 'none';
+
+  try {
+    const endpoint = s.type === 'HAZ' ? `/api/results/haz/${s.sid}` : `/api/results/loss/${s.sid}`;
+    const r = await fetch(endpoint);
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error);
+
+    state.lastResults = j.data;
+    renderResultsData(j.data, s.type);
+    document.getElementById('btn-download').style.display = 'inline-flex';
+    document.getElementById('filename-row').style.display = 'flex';
+    // Pre-fill filename with analysis name
+    const defaultName = (state.selected.name || 'Report').replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
+    document.getElementById('custom-filename').value = defaultName;
+  } catch(e) {
+    document.getElementById('results-alert').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
+  } finally { hideLoading(); }
+}
+
+function renderResultsData(data, type) {
+  const keys  = Object.keys(data);
+  const total = keys.reduce((a,k) => a + (data[k].count||0), 0);
+
+  // Metrics
+  const metricsEl = document.getElementById('results-metrics');
+  metricsEl.style.display = 'grid';
+  metricsEl.className = 'metrics';
+
+  if (type === 'LOSS') {
+    const elt  = data['ELT']          || { count: 0 };
+    const ep   = data['EP Curves']    || { count: 0 };
+    const summ = data['Loss Summary'] || { count: 0 };
+    metricsEl.innerHTML = `
+      <div class="metric"><div class="metric-label">ELT Records</div><div class="metric-value">${elt.count.toLocaleString()}</div><div class="metric-sub">Event loss table</div></div>
+      <div class="metric green"><div class="metric-label">EP Curves</div><div class="metric-value">${ep.count.toLocaleString()}</div><div class="metric-sub">Annual EP data</div></div>
+      <div class="metric amber"><div class="metric-label">Loss Summary</div><div class="metric-value">${summ.count.toLocaleString()}</div><div class="metric-sub">EP distribution</div></div>`;
+  } else {
+    metricsEl.innerHTML = `
+      <div class="metric"><div class="metric-label">HAZ Categories</div><div class="metric-value">${keys.length}</div><div class="metric-sub">Hazard types</div></div>
+      <div class="metric green"><div class="metric-label">Total Records</div><div class="metric-value">${total.toLocaleString()}</div><div class="metric-sub">Across all categories</div></div>
+      <div class="metric amber"><div class="metric-label">Analysis Type</div><div class="metric-value" style="font-size:1rem;">Hazard</div><div class="metric-sub">HAZ analysis</div></div>`;
+  }
+
+  // Column selectors — one per dataset
+  state.selectedCols = {};
+  const csWrap = document.getElementById('col-selector-wrap');
+  const csEl   = document.getElementById('col-selectors');
+  csWrap.style.display = 'block';
+  csEl.innerHTML = keys.map(k => {
+    const cols = data[k].columns || [];
+    state.selectedCols[k] = new Set(cols); // all selected by default
+    return `
+      <div class="col-selector">
+        <div class="col-selector-header">
+          <span class="col-selector-title">${k} — ${cols.length} columns</span>
+          <div class="col-selector-actions">
+            <button onclick="selectAllCols('${k}', true)">Select all</button>
+            <button onclick="selectAllCols('${k}', false)">Clear all</button>
+          </div>
+        </div>
+        <div class="col-grid" id="col-grid-${k.replace(/ /g,'_')}">
+          ${cols.map(c => `
+            <label class="col-chip selected">
+              <input type="checkbox" checked onchange="toggleCol('${k}','${escHtml(c)}',this.checked)"/>
+              ${escHtml(c)}
+            </label>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Tabs
+  const tabsEl = document.getElementById('results-tabs');
+  tabsEl.style.display = 'block';
+  const tabBtns   = keys.map((k,i) => `<button class="tab-btn ${i===0?'active':''}" onclick="switchTab(${i})">${k} (${(data[k].count||0).toLocaleString()})</button>`).join('');
+  const tabPanels = keys.map((k,i) => `
+    <div class="tab-panel ${i===0?'active':''}" id="tab-panel-${i}">
+      <div class="table-wrap">${buildTable(data[k])}</div>
+    </div>`).join('');
+  tabsEl.innerHTML = `<div class="tabs">${tabBtns}</div>${tabPanels}`;
+}
+
+function toggleCol(dataset, col, checked) {
+  if (!state.selectedCols) return;
+  if (!state.selectedCols[dataset]) state.selectedCols[dataset] = new Set();
+  checked ? state.selectedCols[dataset].add(col) : state.selectedCols[dataset].delete(col);
+  // Update chip style
+  const gridId = 'col-grid-' + dataset.replace(/ /g,'_');
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.querySelectorAll('.col-chip').forEach(chip => {
+    const label = chip.textContent.trim();
+    chip.classList.toggle('selected', state.selectedCols[dataset].has(label));
+  });
+}
+
+function selectAllCols(dataset, selectAll) {
+  const cols = state.lastResults?.[dataset]?.columns || [];
+  if (selectAll) {
+    state.selectedCols[dataset] = new Set(cols);
+  } else {
+    state.selectedCols[dataset] = new Set();
+  }
+  const gridId = 'col-grid-' + dataset.replace(/ /g,'_');
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.querySelectorAll('.col-chip').forEach(chip => {
+    chip.classList.toggle('selected', selectAll);
+    chip.querySelector('input').checked = selectAll;
+  });
+}
+
+function switchTab(idx) {
+  document.querySelectorAll('.tab-btn').forEach((b,i)   => b.classList.toggle('active', i===idx));
+  document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', i===idx));
+}
+
+function buildTable(dataset) {
+  if (!dataset || !dataset.columns || !dataset.rows.length) return '<div class="empty"><p>No data available.</p></div>';
+  const cols = dataset.columns.map(c => `<th>${escHtml(c)}</th>`).join('');
+  const rows = dataset.rows.slice(0, 500).map(r =>
+    `<tr>${r.map(v => `<td>${v === null || v === undefined ? '<span style="color:var(--ink-3)">—</span>' : escHtml(String(v))}</td>`).join('')}</tr>`
+  ).join('');
+  const note = dataset.rows.length > 500 ? `<div class="page-info" style="padding:0.5rem 0.9rem;font-size:0.75rem;">Showing first 500 of ${dataset.rows.length.toLocaleString()} rows — full data included in Excel export</div>` : '';
+  return `<table><thead><tr>${cols}</tr></thead><tbody>${rows}</tbody></table>${note}`;
+}
+
+// ── Download ───────────────────────────────────────────────────────────────
+async function downloadExcel() {
+  const s = state.selected;
+  if (!s?.sid || !state.lastResults) return;
+
+  // Build datasets — filter to selected columns only
+  const datasets = {};
+  for (const [key, val] of Object.entries(state.lastResults)) {
+    if (!val || !val.columns || !val.rows || !val.rows.length) continue;
+    const selectedCols = state.selectedCols?.[key];
+    if (!selectedCols || selectedCols.size === 0) continue; // skip if nothing selected
+    // Filter columns and rows
+    const colIndices = val.columns
+      .map((c, i) => ({ c, i }))
+      .filter(({ c }) => selectedCols.has(c));
+    if (!colIndices.length) continue;
+    datasets[key] = {
+      columns: colIndices.map(({ c }) => c),
+      rows:    val.rows.map(row => colIndices.map(({ i }) => row[i])),
+      count:   val.count
+    };
+  }
+
+  if (!Object.keys(datasets).length) {
+    alert('No data to download. Please fetch results first.');
+    return;
+  }
+
+  showLoading('Building Excel report...');
+  try {
+    const body = {
+      meta: {
+        project_name:     s.projectName,
+        analysis_sid:     s.sid,
+        analysis_name:    s.name,
+        analysis_type:    s.type,
+        custom_filename:  document.getElementById('custom-filename').value.trim(),
+      },
+      datasets: datasets
+    };
+    const r = await fetch('/api/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error('Download failed — ' + r.statusText);
+    const blob  = await r.blob();
+    const cd    = r.headers.get('Content-Disposition') || '';
+    const fname = cd.match(/filename="?([^"]+)"?/)?.[1] || 'Touchstone_Report.xlsx';
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href = url; a.download = fname; a.click();
+    URL.revokeObjectURL(url);
+    state.reportCount++;
+    document.getElementById('stat-reports').textContent = state.reportCount;
+    state.history.unshift({
+      time:    new Date().toLocaleString(),
+      project: s.projectName,
+      sid:     s.sid,
+      name:    s.name,
+      type:    s.type,
+      sheets:  Object.keys(datasets).join(', '),
+      file:    fname
+    });
+  } catch(e) {
+    alert('Download failed: ' + e.message);
+  } finally { hideLoading(); }
+}
+
+// ── History ────────────────────────────────────────────────────────────────
+function renderHistory() {
+  const el = document.getElementById('history-content');
+  if (!state.history.length) {
+    el.innerHTML = '<div class="empty"><div class="icon">◷</div><p>No reports downloaded yet.</p></div>';
+    return;
+  }
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Time</th><th>Project</th><th>SID</th><th>Name</th><th>Type</th><th>Sheets</th><th>File</th></tr></thead>
+        <tbody>
+          ${state.history.map(h => `
+            <tr>
+              <td>${h.time}</td>
+              <td>${escHtml(h.project)}</td>
+              <td>${h.sid}</td>
+              <td>${escHtml(h.name)}</td>
+              <td><span class="tag tag-${h.type.toLowerCase()}">${h.type}</span></td>
+              <td style="font-size:0.72rem;">${escHtml(h.sheets || '—')}</td>
+              <td style="font-size:0.72rem;">${escHtml(h.file)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Update greeting based on time
+const hr = new Date().getHours();
+const greeting = hr < 12 ? 'Good morning.' : hr < 17 ? 'Good afternoon.' : 'Good evening.';
+document.querySelector('#page-home .page-header h2').textContent = greeting;
+</script>
+
+<!-- Persistent selection toast -->
+<div class="toast" id="selection-toast">
+  <span class="toast-tag" id="toast-tag">LOSS</span>
+  <span class="toast-msg" id="toast-msg">Analysis selected</span>
+  <button class="toast-action" onclick="goToResults()">Go to Results →</button>
+</div>
+</body>
+</html>

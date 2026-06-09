@@ -1,0 +1,600 @@
+# app.py — Touchstone Results Dashboard
+
+import streamlit as st
+import pandas as pd
+import urllib3
+from io import BytesIO
+from datetime import datetime
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+st.set_page_config(
+    page_title="Touchstone Results",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+#MainMenu, footer, header { visibility: hidden; }
+.block-container { padding: 1.5rem 2rem; max-width: 1400px; }
+
+/* Sidebar */
+section[data-testid="stSidebar"] { background: #111827; border-right: 1px solid #1F2937; width: 220px !important; }
+section[data-testid="stSidebar"] * { color: #9CA3AF !important; }
+section[data-testid="stSidebar"] .stRadio label { font-size: 0.875rem !important; padding: 0.5rem 0.75rem !important; border-radius: 6px !important; cursor: pointer !important; transition: all 0.15s !important; }
+section[data-testid="stSidebar"] .stRadio label:hover { background: #1F2937 !important; color: #F9FAFB !important; }
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { color: #6B7280 !important; font-size: 0.75rem !important; }
+
+/* Page title */
+.page-header { padding: 0.5rem 0 1rem 0; margin-bottom: 1.25rem; border-bottom: 1px solid #E5E7EB; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0; letter-spacing: -0.02em; }
+.page-header p  { font-size: 0.875rem; color: #6B7280; margin: 0.25rem 0 0 0; }
+
+/* Cards */
+.card { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.card-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #9CA3AF; margin-bottom: 0.4rem; }
+.card-value { font-size: 1.6rem; font-weight: 700; color: #111827; line-height: 1.1; }
+.card-sub   { font-size: 0.8rem; color: #6B7280; margin-top: 0.3rem; }
+
+/* Metric row */
+.metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.metric-card { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 1.1rem 1.3rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.metric-card.blue  { border-top: 3px solid #3B82F6; }
+.metric-card.green { border-top: 3px solid #10B981; }
+.metric-card.amber { border-top: 3px solid #F59E0B; }
+.metric-card .label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #9CA3AF; margin-bottom: 0.35rem; }
+.metric-card .value { font-size: 1.4rem; font-weight: 700; color: #111827; }
+.metric-card .sub   { font-size: 0.75rem; color: #6B7280; margin-top: 0.2rem; }
+
+/* Project rows */
+.project-row { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1rem; border: 1px solid #E5E7EB; border-radius: 8px; margin-bottom: 0.35rem; background: #fff; transition: all 0.1s; }
+.project-row:hover { background: #EFF6FF; border-color: #BFDBFE; }
+.project-row.selected { background: #EFF6FF; border-color: #3B82F6; border-left: 3px solid #3B82F6; }
+.project-name { font-size: 0.875rem; font-weight: 500; color: #111827; }
+.project-sid  { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #6B7280; margin-top: 2px; }
+
+/* Section headers */
+.section-header { font-size: 0.78rem; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: 0.08em; margin: 1.25rem 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 1px solid #F3F4F6; }
+
+/* Buttons */
+.stButton > button { background: #2563EB !important; color: #fff !important; border: none !important; border-radius: 8px !important; padding: 0.45rem 1.1rem !important; font-size: 0.875rem !important; font-weight: 500 !important; letter-spacing: -0.01em !important; transition: background 0.15s !important; }
+.stButton > button:hover { background: #1D4ED8 !important; }
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] { gap: 4px; border-bottom: 2px solid #E5E7EB; }
+.stTabs [data-baseweb="tab"] { font-size: 0.8rem !important; font-weight: 500 !important; padding: 0.5rem 1rem !important; border-radius: 6px 6px 0 0 !important; }
+
+/* Input fields */
+.stTextInput input { border-radius: 8px !important; border: 1px solid #D1D5DB !important; font-size: 0.875rem !important; padding: 0.5rem 0.75rem !important; }
+.stTextInput input:focus { border-color: #3B82F6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.1) !important; }
+
+/* Download button */
+.stDownloadButton > button { background: #059669 !important; border-radius: 8px !important; }
+.stDownloadButton > button:hover { background: #047857 !important; }
+</style>
+""", unsafe_allow_html=True)
+
+# ── Sidebar ───────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("""
+    <div style="padding:1.5rem 1rem 1rem 1rem;">
+        <div style="font-size:1.1rem;font-weight:600;color:#E8F4FD;">Touchstone</div>
+        <div style="font-size:0.75rem;color:#4A6580;margin-top:2px;">Results Dashboard</div>
+    </div>
+    """, unsafe_allow_html=True)
+    page = st.radio("", ["🏠  Home", "📁  Projects", "📊  Results", "📋  History"], label_visibility="collapsed")
+    st.markdown("""
+    <div style="position:absolute;bottom:1.5rem;left:1rem;right:1rem;">
+        <div style="font-size:0.7rem;color:#2D4559;border-top:1px solid #1E3448;padding-top:0.75rem;">
+            Touchstone AIR Cloud · SOAP API
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+PAGE_SIZE = 20
+
+# ── Excel builder ─────────────────────────────────────────────────────────────
+def format_sheet(ws):
+    HEADER_BG = "1F3864"; HEADER_FG = "FFFFFF"; ALT_BG = "EAF0FB"; BORDER_CLR = "B8CCE4"
+    thin = Border(
+        left=Side(style="thin", color=BORDER_CLR), right=Side(style="thin", color=BORDER_CLR),
+        top=Side(style="thin", color=BORDER_CLR),  bottom=Side(style="thin", color=BORDER_CLR)
+    )
+    for cell in ws[1]:
+        cell.font = Font(name="Arial", bold=True, color=HEADER_FG, size=10)
+        cell.fill = PatternFill("solid", fgColor=HEADER_BG)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = thin
+    ws.row_dimensions[1].height = 30
+    for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
+        bg = ALT_BG if row_idx % 2 == 0 else "FFFFFF"
+        for cell in row:
+            cell.font = Font(name="Arial", size=9)
+            cell.fill = PatternFill("solid", fgColor=bg)
+            cell.alignment = Alignment(horizontal="left", vertical="center")
+            cell.border = thin
+    for col_idx, col_cells in enumerate(ws.columns, start=1):
+        max_len = max((len(str(c.value)) for c in col_cells if c.value), default=10)
+        ws.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 4, 40)
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+
+
+def build_excel(analysis_sid, analysis_name, project_name, datasets):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Summary"
+    ws["A1"] = "Touchstone Loss Analysis Report"
+    ws["A1"].font = Font(name="Arial", bold=True, size=16, color="1F3864")
+    ws["A3"] = "Project";       ws["B3"] = project_name
+    ws["A4"] = "Analysis SID";  ws["B4"] = analysis_sid
+    ws["A5"] = "Analysis Name"; ws["B5"] = analysis_name
+    ws["A6"] = "Generated";     ws["B6"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ws["A8"] = "Contents"
+    row = 9
+    for name, df in datasets.items():
+        if df is not None and not df.empty:
+            ws[f"A{row}"] = f"  • {name}"; ws[f"B{row}"] = f"{len(df):,} records"; row += 1
+    for col in ["A", "B"]: ws.column_dimensions[col].width = 30
+    for sheet_name, df in datasets.items():
+        if df is not None and not df.empty:
+            ws_data = wb.create_sheet(title=sheet_name[:31])
+            for col_idx, col_name in enumerate(df.columns, start=1):
+                ws_data.cell(row=1, column=col_idx, value=col_name)
+            for row_idx, row_data in enumerate(df.itertuples(index=False), start=2):
+                for col_idx, value in enumerate(row_data, start=1):
+                    ws_data.cell(row=row_idx, column=col_idx, value=value)
+            format_sheet(ws_data)
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+
+def log_pull(project_name, analysis_sid, analysis_name, row_counts):
+    if "history" not in st.session_state:
+        st.session_state.history = []
+    st.session_state.history.insert(0, {
+        "Timestamp":     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Project":       project_name,
+        "Analysis SID":  analysis_sid,
+        "Analysis Name": analysis_name,
+        "ELT Rows":      row_counts.get("ELT", 0),
+        "EP Rows":       row_counts.get("EP Curves", 0),
+        "Summary Rows":  row_counts.get("Loss Summary", 0),
+    })
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# HOME
+# ════════════════════════════════════════════════════════════════════════════
+if page == "🏠  Home":
+    st.markdown("""
+    <div class="page-header">
+        <h1>Touchstone Results Dashboard</h1>
+        <p>Pull catastrophe model results directly from Touchstone — no manual copy-paste required</p>
+    </div>""", unsafe_allow_html=True)
+
+    st.markdown('<div class="section-header">How to use</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="card">
+        <ol style="margin:0;padding-left:1.2rem;font-size:0.875rem;color:#374151;line-height:2.2;">
+            <li>Go to <strong>Projects</strong> — load and search across 2,252 projects</li>
+            <li>Select a project — see its completed analyses (first 50 shown)</li>
+            <li>Select an analysis — go to <strong>Results</strong></li>
+            <li>Click <strong>Fetch Results</strong> — ELT, EP Curves, Loss Summary pulled automatically</li>
+            <li>Click <strong>Download Excel Report</strong></li>
+        </ol>
+    </div>""", unsafe_allow_html=True)
+
+    projects = st.session_state.get("all_projects", [])
+    history  = st.session_state.get("history", [])
+    st.markdown(f"""
+    <div class="metric-row">
+        <div class="metric-card blue">
+            <div class="label">Projects loaded</div>
+            <div class="value">{len(projects):,}</div>
+            <div class="sub">From Touchstone API</div>
+        </div>
+        <div class="metric-card green">
+            <div class="label">Reports pulled</div>
+            <div class="value">{len(history)}</div>
+            <div class="sub">This session</div>
+        </div>
+        <div class="metric-card amber">
+            <div class="label">Data source</div>
+            <div class="value">SOAP API</div>
+            <div class="sub">Touchstone AIR Cloud</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# PROJECTS
+# ════════════════════════════════════════════════════════════════════════════
+elif page == "📁  Projects":
+    st.markdown("""
+    <div class="page-header">
+        <h1>Projects</h1>
+        <p>Browse and search all projects — select one to view its analyses</p>
+    </div>""", unsafe_allow_html=True)
+
+    # ── Load projects ─────────────────────────────────────────────────────────
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        if st.button("🔄  Load Projects"):
+            with st.spinner("Fetching all projects from Touchstone..."):
+                try:
+                    from get_analysis_sids import get_all_projects
+                    projects = get_all_projects()
+                    st.session_state["all_projects"]  = projects
+                    st.session_state["project_page"]  = 0
+                    st.session_state["project_search"] = ""
+                    st.success(f"✓ {len(projects):,} projects loaded")
+                except Exception as e:
+                    st.error(f"Failed: {e}")
+
+    projects = st.session_state.get("all_projects", [])
+
+    if projects:
+        # ── Search ────────────────────────────────────────────────────────────
+        st.markdown('<div class="section-header">Search Projects</div>', unsafe_allow_html=True)
+        search = st.text_input(
+            "Search", placeholder="Type project name...",
+            label_visibility="collapsed",
+            key="project_search_input"
+        )
+
+        # Filter by name
+        if search:
+            filtered = [p for p in projects if search.lower() in p["ProjectName"].lower()]
+            if st.session_state.get("last_search") != search:
+                st.session_state["project_page"] = 0
+                st.session_state["last_search"]  = search
+        else:
+            filtered = projects
+
+        # ── Pagination ────────────────────────────────────────────────────────
+        total_pages = max(1, (len(filtered) + PAGE_SIZE - 1) // PAGE_SIZE)
+        current_page = st.session_state.get("project_page", 0)
+        current_page = min(current_page, total_pages - 1)
+
+        start = current_page * PAGE_SIZE
+        end   = start + PAGE_SIZE
+        page_projects = filtered[start:end]
+
+        # Stats row
+        filter_label = "(filtered)" if search else ""
+        st.markdown(
+            f"<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;'>"
+            f"<span style='font-size:0.8rem;color:#6B7E8F;'>Showing <strong>{start+1}–{min(end, len(filtered))}</strong> of <strong>{len(filtered):,}</strong> projects {filter_label}</span>"
+            f"<span style='font-size:0.8rem;color:#6B7E8F;'>Page {current_page+1} of {total_pages}</span>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
+        # ── Project list ──────────────────────────────────────────────────────
+        selected_project_sid  = st.session_state.get("selected_project_sid")
+        selected_project_name = st.session_state.get("selected_project_name", "")
+
+        for p in page_projects:
+            is_selected = str(p["ProjectSid"]) == str(selected_project_sid)
+            card_class  = "project-row selected" if is_selected else "project-row"
+            result_text = f"{p['ResultCount']} result(s)" if p.get('ResultCount') else ""
+
+            col_name, col_btn = st.columns([5, 1])
+            with col_name:
+                st.markdown(f"""
+                <div class="{card_class}">
+                    <div>
+                        <div class="project-name">{p["ProjectName"]}</div>
+                        <div class="project-sid">SID: {p["ProjectSid"]} &nbsp;·&nbsp; {result_text}</div>
+                    </div>
+                </div>""", unsafe_allow_html=True)
+            with col_btn:
+                if st.button("Select", key=f"sel_{p['ProjectSid']}"):
+                    st.session_state["selected_project_sid"]       = p["ProjectSid"]
+                    st.session_state["selected_project_name"]      = p["ProjectName"]
+                    st.session_state["project_analyses"]           = None
+                    st.session_state["selected_analysis_sid"]      = None
+                    st.session_state["selected_analysis_name"]     = None
+                    st.rerun()
+
+        # ── Pagination controls ───────────────────────────────────────────────
+        st.markdown("<div style='margin-top:1rem;'></div>", unsafe_allow_html=True)
+        col_prev, col_info, col_next = st.columns([1, 2, 1])
+        with col_prev:
+            if current_page > 0:
+                if st.button("← Previous 20"):
+                    st.session_state["project_page"] = current_page - 1
+                    st.rerun()
+        with col_info:
+            st.markdown(f"<p style='text-align:center;font-size:0.8rem;color:#6B7E8F;padding-top:0.5rem;'>Page {current_page+1} of {total_pages}</p>", unsafe_allow_html=True)
+        with col_next:
+            if current_page < total_pages - 1:
+                if st.button("Next 20 →"):
+                    st.session_state["project_page"] = current_page + 1
+                    st.rerun()
+
+        # ── Selected project — show analyses ──────────────────────────────────
+        if selected_project_sid:
+            st.markdown(f'<div class="section-header">Analyses — {selected_project_name}</div>', unsafe_allow_html=True)
+
+            # ── Two load buttons side by side ─────────────────────────────────
+            col_loss, col_haz, col_rest = st.columns([1, 1, 3])
+
+            with col_loss:
+                if st.button("📋  Load Loss Analyses"):
+                    with st.spinner("Fetching loss analyses..."):
+                        try:
+                            from get_analysis_sids import get_analyses_for_project
+                            loss = get_analyses_for_project(selected_project_sid, selected_project_name)
+                            st.session_state["loss_analyses"] = loss
+                            st.session_state["selected_analysis_sid"]  = None
+                            st.session_state["selected_analysis_name"] = None
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed: {e}")
+
+            with col_haz:
+                if st.button("⚠️  Load Hazard Analyses"):
+                    with st.spinner("Fetching hazard analyses..."):
+                        try:
+                            from get_analysis_sids import get_hazard_analyses_for_project
+                            haz = get_hazard_analyses_for_project(selected_project_sid, selected_project_name)
+                            st.session_state["haz_analyses"] = haz
+                            st.session_state["selected_analysis_sid"]  = None
+                            st.session_state["selected_analysis_name"] = None
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed: {e}")
+
+            loss_analyses = st.session_state.get("loss_analyses")
+            haz_analyses  = st.session_state.get("haz_analyses")
+
+            def render_analysis_list(analyses, section_label, badge_type):
+                """Renders a searchable list of analyses with select buttons"""
+                if analyses is None:
+                    return
+                badge_color = "#DBEAFE" if badge_type == "LOSS" else "#FEF3C7"
+                badge_text  = "#1E40AF" if badge_type == "LOSS" else "#92400E"
+
+                st.markdown(f'<div class="section-header">{section_label} ({len(analyses)})</div>', unsafe_allow_html=True)
+
+                if len(analyses) == 0:
+                    st.info(f"No {section_label.lower()} found for this project.")
+                    return
+
+                # Search
+                search_key = f"search_{badge_type.lower()}"
+                search = st.text_input(
+                    f"Search {section_label}",
+                    placeholder=f"Search by SID or name...",
+                    label_visibility="collapsed",
+                    key=search_key
+                )
+
+                filtered = [
+                    a for a in analyses
+                    if not search
+                    or search.lower() in a["AnalysisName"].lower()
+                    or search in str(a["AnalysisSid"])
+                ]
+
+                shown = filtered[:20]
+                st.markdown(
+                    f"<div style='font-size:0.8rem;color:#6B7E8F;margin-bottom:0.5rem;'>"
+                    f"Showing {len(shown)} of {len(filtered)}"
+                    f"{' (filtered)' if search else ''}</div>",
+                    unsafe_allow_html=True
+                )
+
+                for a in shown:
+                    col_a, col_b = st.columns([5, 1])
+                    with col_a:
+                        st.markdown(f"""
+                        <div class="project-row">
+                            <div style="display:flex;align-items:center;gap:0.75rem;">
+                                <span style="background:{badge_color};color:{badge_text};font-size:0.7rem;font-weight:600;padding:2px 8px;border-radius:4px;">{badge_type}</span>
+                                <div>
+                                    <div class="project-name">{a["AnalysisName"]}</div>
+                                    <div class="project-sid">SID: {a["AnalysisSid"]} &nbsp;·&nbsp; Completed: {a.get("Completed","—")}</div>
+                                </div>
+                            </div>
+                        </div>""", unsafe_allow_html=True)
+                    with col_b:
+                        if st.button("Select", key=f"ana_{badge_type}_{a['AnalysisSid']}"):
+                            st.session_state["selected_analysis_sid"]  = a["AnalysisSid"]
+                            st.session_state["selected_analysis_name"] = a["AnalysisName"]
+                            st.session_state["selected_analysis_type"] = badge_type
+                            st.session_state["last_results"]           = None
+                            st.rerun()
+
+            # ── Render Loss section ───────────────────────────────────────────
+            render_analysis_list(loss_analyses, "Loss Analyses", "LOSS")
+
+            # ── Render Hazard section ─────────────────────────────────────────
+            render_analysis_list(haz_analyses, "Hazard Analyses", "HAZ")
+
+            # ── Selection confirmation ────────────────────────────────────────
+            if st.session_state.get("selected_analysis_sid"):
+                a_type = st.session_state.get("selected_analysis_type", "LOSS")
+                st.success(
+                    f"✓ {a_type} analysis selected — "
+                    f"SID {st.session_state['selected_analysis_sid']} — "
+                    f"go to **Results** to fetch data"
+                )
+
+    else:
+        st.info("Click **Load Projects** to fetch all projects from Touchstone")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# RESULTS
+# ════════════════════════════════════════════════════════════════════════════
+elif page == "📊  Results":
+    st.markdown("""
+    <div class="page-header">
+        <h1>Results</h1>
+        <p>Fetch and download loss data for the selected analysis</p>
+    </div>""", unsafe_allow_html=True)
+
+    analysis_sid  = st.session_state.get("selected_analysis_sid")
+    analysis_name = st.session_state.get("selected_analysis_name", "")
+    project_name  = st.session_state.get("selected_project_name", "")
+
+    if not analysis_sid:
+        st.info("No analysis selected — go to **Projects** to select one first.")
+    else:
+        st.markdown(f"""
+        <div class="card">
+            <div class="card-title">Selected Analysis</div>
+            <div class="card-value" style="font-size:1.2rem;">{analysis_name}</div>
+            <div class="card-sub">Project: {project_name} &nbsp;·&nbsp; Analysis SID: <strong>{analysis_sid}</strong></div>
+        </div>""", unsafe_allow_html=True)
+
+        analysis_type = st.session_state.get("selected_analysis_type", "LOSS")
+
+        if st.button("🚀  Fetch Results"):
+            with st.spinner(f"Fetching results for '{analysis_name}'..."):
+                if analysis_type == "HAZ":
+                    from touchstone_client import get_hazard_results
+                    haz_results = get_hazard_results(analysis_sid)
+                    st.session_state["last_results"]     = {}
+                    st.session_state["last_haz_results"] = haz_results
+                    total = sum(len(v) for v in haz_results.values())
+                    log_pull(project_name, analysis_sid, analysis_name, {"HAZ": total})
+                    if total > 0:
+                        st.success(f"✓ {total:,} total HAZ records fetched across {len(haz_results)} categories")
+                    else:
+                        st.warning("⚠ No HAZ data returned — check the analysis SID")
+                else:
+                    from touchstone_client import get_all_loss_data
+                    results = get_all_loss_data(analysis_sid)
+                    st.session_state["last_results"]     = results
+                    st.session_state["last_haz_results"] = {}
+                    total = sum(len(v) for v in results.values() if not v.empty)
+                    log_pull(project_name, analysis_sid, analysis_name, {k: len(v) for k, v in results.items()})
+                    if total > 0:
+                        st.success(f"✓ {total:,} total records fetched")
+                    else:
+                        st.warning("⚠ No data returned for this analysis")
+
+        # ── LOSS Results ──────────────────────────────────────────────────────
+        if analysis_type == "LOSS" and st.session_state.get("last_results"):
+            results    = st.session_state["last_results"]
+            df_elt     = results.get("ELT",          pd.DataFrame())
+            df_ep      = results.get("EP Curves",     pd.DataFrame())
+            df_summary = results.get("Loss Summary",  pd.DataFrame())
+
+            st.markdown(f"""
+            <div class="metric-row">
+                <div class="metric-card blue"><div class="label">ELT records</div><div class="value">{len(df_elt):,}</div><div class="sub">Event loss table</div></div>
+                <div class="metric-card green"><div class="label">EP Curves records</div><div class="value">{len(df_ep):,}</div><div class="sub">Annual EP data</div></div>
+                <div class="metric-card amber"><div class="label">Loss Summary records</div><div class="value">{len(df_summary):,}</div><div class="sub">EP distribution</div></div>
+            </div>""", unsafe_allow_html=True)
+
+            tab1, tab2, tab3 = st.tabs([
+                f"📋  ELT ({len(df_elt):,})",
+                f"📈  EP Curves ({len(df_ep):,})",
+                f"📄  Loss Summary ({len(df_summary):,})"
+            ])
+            with tab1:
+                if not df_elt.empty:
+                    st.dataframe(df_elt, use_container_width=True, height=400)
+                else:
+                    st.info("No ELT data returned for this analysis")
+            with tab2:
+                if not df_ep.empty:
+                    st.dataframe(df_ep, use_container_width=True, height=400)
+                else:
+                    st.info("No EP Curves data returned for this analysis")
+            with tab3:
+                if not df_summary.empty:
+                    st.dataframe(df_summary, use_container_width=True, height=400)
+                else:
+                    st.info("No Loss Summary data returned for this analysis")
+
+            st.markdown('<div class="section-header">Download Report</div>', unsafe_allow_html=True)
+            if any(not v.empty for v in results.values()):
+                excel_bytes = build_excel(analysis_sid, analysis_name, project_name, {
+                    "ELT": df_elt, "EP Curves": df_ep, "Loss Summary": df_summary
+                })
+                safe_name = "".join(c for c in analysis_name if c.isalnum() or c in " _-")[:40].strip()
+                filename  = f"Touchstone_{safe_name}_{analysis_sid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                col1, col2 = st.columns([1, 4])
+                with col1:
+                    st.download_button("⬇  Download Excel Report", data=excel_bytes, file_name=filename, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                with col2:
+                    st.caption(f"📄 {filename}")
+            else:
+                st.warning("No data available to download")
+
+        # ── HAZ Results ───────────────────────────────────────────────────────
+        elif analysis_type == "HAZ" and st.session_state.get("last_haz_results"):
+            haz_results = st.session_state["last_haz_results"]
+
+            if not haz_results:
+                st.warning("No hazard data returned for this analysis")
+            else:
+                total = sum(len(v) for v in haz_results.values())
+                st.markdown(f"""
+                <div class="metric-row">
+                    <div class="metric-card blue"><div class="label">HAZ categories</div><div class="value">{len(haz_results)}</div><div class="sub">Hazard types returned</div></div>
+                    <div class="metric-card green"><div class="label">Total records</div><div class="value">{total:,}</div><div class="sub">Across all categories</div></div>
+                    <div class="metric-card amber"><div class="label">Analysis type</div><div class="value">HAZ</div><div class="sub">Hazard analysis</div></div>
+                </div>""", unsafe_allow_html=True)
+
+                # One tab per hazard category
+                tab_labels = [f"{cat} ({len(df):,})" for cat, df in haz_results.items()]
+                if tab_labels:
+                    tabs = st.tabs(tab_labels)
+                    for tab, (cat, df) in zip(tabs, haz_results.items()):
+                        with tab:
+                            if not df.empty:
+                                st.dataframe(df, use_container_width=True, height=400)
+                            else:
+                                st.info(f"No data for {cat}")
+
+                # Download
+                st.markdown('<div class="section-header">Download Report</div>', unsafe_allow_html=True)
+                if haz_results:
+                    excel_bytes = build_excel(analysis_sid, analysis_name, project_name, haz_results)
+                    safe_name = "".join(c for c in analysis_name if c.isalnum() or c in " _-")[:40].strip()
+                    filename  = f"Touchstone_HAZ_{safe_name}_{analysis_sid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                    col1, col2 = st.columns([1, 4])
+                    with col1:
+                        st.download_button("⬇  Download HAZ Report", data=excel_bytes, file_name=filename, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    with col2:
+                        st.caption(f"📄 {filename}")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# HISTORY
+# ════════════════════════════════════════════════════════════════════════════
+elif page == "📋  History":
+    st.markdown("""
+    <div class="page-header">
+        <h1>Pull History</h1>
+        <p>Record of all results fetched this session</p>
+    </div>""", unsafe_allow_html=True)
+
+    history = st.session_state.get("history", [])
+    if history:
+        st.dataframe(pd.DataFrame(history), use_container_width=True, height=400)
+        st.markdown(f"""
+        <div class="card">
+            <div class="card-title">Session total</div>
+            <div class="card-value">{len(history)}</div>
+            <div class="card-sub">Analyses pulled this session</div>
+        </div>""", unsafe_allow_html=True)
+    else:
+        st.info("No results pulled yet. Go to Projects to get started.")
