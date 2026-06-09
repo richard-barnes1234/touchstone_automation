@@ -555,7 +555,7 @@ function renderProjectList() {
          onclick="selectProject('${p.ProjectSid}', '${escHtml(p.ProjectName)}')">
       <div>
         <div class="row-name">${escHtml(p.ProjectName)}</div>
-        <div class="row-meta">SID: ${p.ProjectSid} &nbsp;·&nbsp; ${p.ResultCount || 0} result(s)</div>
+        <div class="row-meta">SID: ${p.ProjectSid}</div>
       </div>
       <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();selectProject('${p.ProjectSid}','${escHtml(p.ProjectName)}')">
         Select
