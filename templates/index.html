@@ -652,12 +652,10 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
       <input type="text" id="project-search" placeholder="Search projects by name..." oninput="filterProjects()" />
     </div>
 
+    <div id="project-count-info" style="font-size:0.78rem;color:var(--ink-2);margin-bottom:0.5rem;"></div>
     <div id="project-list"></div>
-
-    <div class="pagination" id="project-pagination" style="display:none;">
-      <button class="btn btn-secondary btn-sm" id="btn-prev" onclick="changePage(-1)">← Previous</button>
-      <span class="page-info" id="page-info"></span>
-      <button class="btn btn-secondary btn-sm" id="btn-next" onclick="changePage(1)">Next →</button>
+    <div id="project-load-more" style="display:none;text-align:center;padding:0.75rem;">
+      <button class="btn btn-secondary btn-sm" onclick="loadMoreProjects()">Load more projects</button>
     </div>
 
     <!-- Analyses section -->
@@ -829,9 +827,10 @@ async function loadProjects() {
     const r = await fetch('/api/projects');
     const j = await r.json();
     if (!j.ok) throw new Error(j.error);
-    state.projects = j.data;
-    state.filtered = j.data;
-    state.page     = 0;
+    state.projects    = j.data;
+    state.filtered    = j.data;
+    state.page        = 0;
+    state._shownCount = state.pageSize;
     document.getElementById('projects-count').textContent = `${j.count.toLocaleString()} projects`;
     document.getElementById('stat-projects').textContent  = j.count.toLocaleString();
     renderProjectList();
@@ -843,51 +842,53 @@ async function loadProjects() {
 function filterProjects() {
   const q = document.getElementById('project-search').value.toLowerCase();
   state.filtered = q
-    ? state.projects.filter(p => p.ProjectName.toLowerCase().includes(q))
+    ? state.projects.filter(p =>
+        p.ProjectName.toLowerCase().includes(q) ||
+        String(p.ProjectSid).includes(q))
     : state.projects;
-  state.page = 0;
+  state._shownCount = state.pageSize;
   renderProjectList();
 }
 
-function renderProjectList() {
-  const { filtered, page, pageSize } = state;
-  const total = filtered.length;
-  const totalPages = Math.ceil(total / pageSize);
-  const start = page * pageSize;
-  const slice = filtered.slice(start, start + pageSize);
+function renderProjectList(append) {
+  const { filtered, pageSize } = state;
+  const total    = filtered.length;
+  const shown    = state._shownCount || pageSize;
+  const slice    = filtered.slice(0, shown);
+  const infoEl   = document.getElementById('project-count-info');
+  const listEl   = document.getElementById('project-list');
+  const moreEl   = document.getElementById('project-load-more');
 
-  const list = document.getElementById('project-list');
+  infoEl.textContent = filtered.length
+    ? `Showing ${Math.min(shown, total).toLocaleString()} of ${total.toLocaleString()} projects`
+    : '';
+
   if (!slice.length) {
-    list.innerHTML = '<div class="empty"><div class="icon">◫</div><p>No projects found.</p></div>';
-    document.getElementById('project-pagination').style.display = 'none';
+    listEl.innerHTML = '<div class="empty"><div class="icon">◫</div><p>No projects match your search.</p></div>';
+    moreEl.style.display = 'none';
     return;
   }
 
-  list.innerHTML = slice.map(p => `
-    <div class="row-item ${state.selected?.projectSid === p.ProjectSid ? 'selected' : ''}" 
+  listEl.innerHTML = slice.map(p => `
+    <div class="row-item ${state.selected?.projectSid === p.ProjectSid ? 'selected' : ''}"
          onclick="selectProject('${p.ProjectSid}', '${escHtml(p.ProjectName)}')">
       <div>
         <div class="row-name">${escHtml(p.ProjectName)}</div>
         <div class="row-meta">SID: ${p.ProjectSid}</div>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();selectProject('${p.ProjectSid}','${escHtml(p.ProjectName)}')">
+      <button class="btn btn-secondary btn-sm"
+              onclick="event.stopPropagation();selectProject('${p.ProjectSid}','${escHtml(p.ProjectName)}')">
         Select
       </button>
     </div>
   `).join('');
 
-  // Pagination
-  const pg = document.getElementById('project-pagination');
-  pg.style.display = 'flex';
-  document.getElementById('page-info').textContent = `${start+1}–${Math.min(start+pageSize, total)} of ${total.toLocaleString()}`;
-  document.getElementById('btn-prev').disabled = page === 0;
-  document.getElementById('btn-next').disabled = page >= totalPages - 1;
+  moreEl.style.display = shown < total ? 'block' : 'none';
 }
 
-function changePage(dir) {
-  state.page += dir;
+function loadMoreProjects() {
+  state._shownCount = (state._shownCount || state.pageSize) + state.pageSize;
   renderProjectList();
-  document.getElementById('project-list').scrollIntoView({behavior:'smooth'});
 }
 
 function selectProject(sid, name) {
