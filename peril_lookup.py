@@ -21,16 +21,19 @@ def _load_peril_set():
             continue
         try:
             # Always read with tab — the SSMS export is tab-delimited
-            df = pd.read_csv(fname, sep='\t', encoding='utf-8', on_bad_lines='skip')
+            df = pd.read_csv(fname, sep='\t', encoding='utf-8',
+                             on_bad_lines='skip')
             df.columns = [c.strip() for c in df.columns]
 
             if len(df.columns) < 2:
                 # Try with encoding that handles Windows line endings
-                df = pd.read_csv(fname, sep='\t', encoding='cp1252', on_bad_lines='skip')
+                df = pd.read_csv(
+                    fname, sep='\t', encoding='cp1252', on_bad_lines='skip')
                 df.columns = [c.strip() for c in df.columns]
 
             if len(df.columns) < 2:
-                print(f"  ⚠ {fname} — only {len(df.columns)} column(s) found, skipping")
+                print(
+                    f"  ⚠ {fname} — only {len(df.columns)} column(s) found, skipping")
                 continue
 
             # Identify columns
@@ -40,12 +43,14 @@ def _load_peril_set():
             lookup = {}
             for _, row in df.iterrows():
                 try:
-                    lookup[int(str(row[code_col]).strip())] = str(row[desc_col]).strip()
+                    lookup[int(str(row[code_col]).strip())] = str(
+                        row[desc_col]).strip()
                 except (ValueError, TypeError):
                     pass
 
             if lookup:
-                print(f"  ✓ Peril lookup loaded: {len(lookup):,} codes from {fname}")
+                print(
+                    f"  ✓ Peril lookup loaded: {len(lookup):,} codes from {fname}")
                 return lookup
             else:
                 print(f"  ⚠ {fname} parsed but no valid rows found")
@@ -53,7 +58,8 @@ def _load_peril_set():
         except Exception as e:
             print(f"  ⚠ Failed to load {fname}: {e}")
 
-    print("  ⚠ No peril set file found — descriptions will show as 'Peril Set {code}'")
+    print(
+        "  ⚠ No peril set file found — descriptions will show as 'Peril Set {code}'")
     return {}
 
 
@@ -76,12 +82,13 @@ def enrich_with_peril(df):
     """
     if df is None or df.empty:
         return df
-    col = next((c for c in df.columns if c in ('PerilCode', 'PeriSetCode', 'PerilSetCode')), None)
+    col = next((c for c in df.columns if c in (
+        'PerilCode', 'PeriSetCode', 'PerilSetCode')), None)
     if not col:
         return df
     df = df.copy()
     df.insert(
-        df.columns.get_loc('PerilDescription') + 1,
+        df.columns.get_loc(col) + 1,
         'PerilDescription',
         df[col].apply(get_peril_description)
     )
