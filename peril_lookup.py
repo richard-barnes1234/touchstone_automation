@@ -1,8 +1,7 @@
 # peril_lookup.py
 # ─────────────────────────────────────────────────────────────────────────────
 # Loads PerilSetCode → Description mapping from file.
-# Supports .txt (tab-delimited) and .csv (comma-delimited).
-# To update: re-export tPerilSet from SSMS and replace the file.
+# Source: AIRReference.dbo.tPerilSet (tab-delimited export from SSMS)
 # ─────────────────────────────────────────────────────────────────────────────
 
 import os
@@ -10,43 +9,46 @@ import pandas as pd
 
 
 def _load_peril_set():
-    """Loads peril set lookup from file. Returns dict of {code: description}."""
+    """Loads peril set lookup. Tries multiple filenames, always uses tab delimiter."""
     candidates = [
-        ("peril_set.txt",          "\t"),
-        ("peril_set.csv",          ","),
-        ("PerilSetCoes_sov.txt",   "\t"),
+        "PerilSetCoes_sov.txt",
+        "peril_set.txt",
+        "peril_set.csv",
     ]
 
-    for fname, sep in candidates:
+    for fname in candidates:
         if not os.path.exists(fname):
             continue
         try:
-            df = pd.read_csv(fname, sep=sep)
+            # Always read with tab — the SSMS export is tab-delimited
+            df = pd.read_csv(fname, sep='\t', encoding='utf-8', on_bad_lines='skip')
             df.columns = [c.strip() for c in df.columns]
 
-            # Find code and description columns
-            code_col = next(
-                (c for c in df.columns if 'perilsetcode' in c.lower().replace(' ','')),
-                df.columns[0]
-            )
-            desc_col = next(
-                (c for c in df.columns if 'desc' in c.lower()),
-                df.columns[1]
-            )
+            if len(df.columns) < 2:
+                # Try with encoding that handles Windows line endings
+                df = pd.read_csv(fname, sep='\t', encoding='cp1252', on_bad_lines='skip')
+                df.columns = [c.strip() for c in df.columns]
 
             if len(df.columns) < 2:
-                print(f"  ⚠ {fname} parsed as single column — wrong delimiter")
+                print(f"  ⚠ {fname} — only {len(df.columns)} column(s) found, skipping")
                 continue
+
+            # Identify columns
+            code_col = df.columns[0]
+            desc_col = df.columns[1]
 
             lookup = {}
             for _, row in df.iterrows():
                 try:
-                    lookup[int(row[code_col])] = str(row[desc_col]).strip()
+                    lookup[int(str(row[code_col]).strip())] = str(row[desc_col]).strip()
                 except (ValueError, TypeError):
                     pass
 
-            print(f"  ✓ Peril lookup loaded: {len(lookup):,} codes from {fname}")
-            return lookup
+            if lookup:
+                print(f"  ✓ Peril lookup loaded: {len(lookup):,} codes from {fname}")
+                return lookup
+            else:
+                print(f"  ⚠ {fname} parsed but no valid rows found")
 
         except Exception as e:
             print(f"  ⚠ Failed to load {fname}: {e}")
@@ -94,5 +96,5 @@ def get_unique_perils(df):
 if __name__ == "__main__":
     print(f"\nPeril Set Lookup — {len(PERIL_SET):,} codes loaded")
     print("\nSample entries:")
-    for code in [1, 4, 7, 15, 16, 32, 64, 256, 9983]:
+    for code in [1, 4, 7, 15, 16, 32, 64, 256]:
         print(f"  Code {code:>6}  →  {get_peril_description(code)}")
