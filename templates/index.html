@@ -241,6 +241,204 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 .empty .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .empty p { font-size: 0.875rem; }
 
+/* ── Analytics Dashboard Layout ──────────────────────────── */
+#page-results {
+  padding: 0 !important;
+  max-width: 100% !important;
+  height: 100vh;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+#page-results.active { display: flex; }
+
+.results-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  gap: 1rem; flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.results-topbar-left { display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0; }
+.results-topbar-right { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
+
+.analysis-chip {
+  display: flex; align-items: center; gap: 0.6rem;
+  background: #EFF6FF; border: 1px solid #BFDBFE;
+  border-radius: 8px; padding: 0.4rem 0.85rem;
+  min-width: 0;
+}
+.analysis-chip .chip-label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); white-space: nowrap; }
+.analysis-chip .chip-name  { font-size: 0.875rem; font-weight: 600; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+.analysis-chip .chip-meta  { font-size: 0.72rem; color: var(--ink-2); font-family: var(--font-mono); white-space: nowrap; }
+
+.results-body {
+  display: flex; flex: 1; overflow: hidden; min-height: 0;
+}
+
+/* ── Left: data panel (70%) ───────────────────────────────── */
+.data-panel {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; min-width: 0;
+  background: #F5F7FA;
+}
+
+.data-panel-tabs {
+  display: flex; align-items: center; gap: 2px;
+  padding: 0.75rem 1.25rem 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.dp-tab {
+  padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500;
+  border: none; background: none; cursor: pointer; color: var(--ink-2);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  white-space: nowrap; transition: all 0.15s; font-family: var(--font-body);
+  border-radius: 6px 6px 0 0;
+}
+.dp-tab:hover { color: var(--ink); background: #F5F7FA; }
+.dp-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; background: #F5F7FA; }
+.dp-tab .tab-count { font-size: 0.68rem; background: #E2E8F0; color: #64748B; border-radius: 10px; padding: 1px 6px; margin-left: 4px; }
+.dp-tab.active .tab-count { background: #DBEAFE; color: var(--accent); }
+
+.data-panel-metrics {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;
+  padding: 0.75rem 1.25rem; background: #F5F7FA; flex-shrink: 0;
+}
+.dp-metric {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 0.7rem 1rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.dp-metric .m-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-3); margin-bottom: 0.2rem; }
+.dp-metric .m-value { font-family: var(--font-head); font-size: 1.3rem; font-weight: 700; color: var(--ink); line-height: 1; }
+.dp-metric .m-sub   { font-size: 0.72rem; color: var(--ink-2); margin-top: 0.15rem; }
+.dp-metric.blue  { border-top: 2px solid #3B82F6; }
+.dp-metric.green { border-top: 2px solid #10B981; }
+.dp-metric.amber { border-top: 2px solid #F59E0B; }
+
+.data-panel-peril {
+  display: none; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1.25rem; background: #F5F7FA;
+  flex-shrink: 0; flex-wrap: wrap;
+}
+.data-panel-peril.show { display: flex; }
+.dp-peril-label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+
+.data-panel-table {
+  flex: 1; overflow: auto; padding: 0 1.25rem 1.25rem;
+  min-height: 0;
+}
+.data-panel-table table {
+  width: 100%; border-collapse: collapse; font-size: 0.78rem;
+  background: var(--surface); border-radius: 10px;
+  overflow: hidden; box-shadow: var(--shadow);
+}
+.data-panel-table thead th {
+  background: var(--accent); color: #fff;
+  padding: 0.6rem 0.85rem; text-align: left;
+  font-weight: 600; font-size: 0.7rem;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  white-space: nowrap; position: sticky; top: 0; z-index: 2;
+}
+.data-panel-table tbody tr { border-bottom: 1px solid #F1F5F9; transition: background 0.1s; }
+.data-panel-table tbody tr:last-child { border-bottom: none; }
+.data-panel-table tbody tr:nth-child(even) { background: #F8FAFC; }
+.data-panel-table tbody tr:hover { background: #EFF6FF; }
+.data-panel-table tbody td {
+  padding: 0.45rem 0.85rem; color: var(--ink);
+  white-space: nowrap; font-family: var(--font-mono); font-size: 0.75rem;
+}
+.data-panel-empty {
+  display: flex; align-items: center; justify-content: center;
+  height: 200px; color: var(--ink-3); font-size: 0.875rem;
+  background: var(--surface); border-radius: 10px; margin-top: 0.75rem;
+  box-shadow: var(--shadow);
+}
+
+/* ── Right: config panel (30%) ────────────────────────────── */
+.config-panel {
+  width: 300px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+}
+.config-panel-header {
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.config-panel-header h3 {
+  font-family: var(--font-head); font-size: 0.875rem; font-weight: 700;
+  color: var(--ink); letter-spacing: -0.01em;
+}
+.config-panel-header p { font-size: 0.72rem; color: var(--ink-2); margin-top: 2px; }
+
+.config-filename {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.config-filename label { font-size: 0.72rem; font-weight: 600; color: var(--ink-2); display: block; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.config-filename-row { display: flex; align-items: center; gap: 0.4rem; }
+.config-filename-row input {
+  flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 0.8rem; font-family: var(--font-mono);
+  color: var(--ink); outline: none;
+}
+.config-filename-row input:focus { border-color: var(--accent-2); }
+.config-filename-row .ext { font-size: 0.75rem; color: var(--ink-3); font-family: var(--font-mono); white-space: nowrap; }
+
+.config-cols { flex: 1; overflow-y: auto; padding: 0.75rem 1.25rem; }
+
+.col-card {
+  background: #F8FAFC; border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 0.75rem; overflow: hidden;
+}
+.col-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 1;
+}
+.col-card-title { font-size: 0.72rem; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: 0.06em; }
+.col-card-count { font-size: 0.68rem; color: var(--ink-3); font-family: var(--font-mono); }
+.col-card-actions { display: flex; gap: 0.3rem; }
+.col-card-actions button {
+  font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--ink-2); cursor: pointer; font-family: var(--font-body);
+  transition: all 0.1s;
+}
+.col-card-actions button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.col-card-body { padding: 0.5rem 0.75rem; max-height: 180px; overflow-y: auto; }
+
+.col-pill {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; margin: 2px;
+  border-radius: 12px; border: 1px solid #CBD5E1;
+  background: var(--surface); color: #475569;
+  font-size: 0.68rem; font-family: var(--font-mono);
+  cursor: pointer; user-select: none; transition: all 0.1s;
+}
+.col-pill input { display: none; }
+.col-pill.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+.col-pill:hover { border-color: var(--accent-2); }
+
+/* ── No selection state ───────────────────────────────────── */
+.results-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; gap: 0.75rem; color: var(--ink-3);
+}
+.results-empty .empty-icon { font-size: 2rem; }
+.results-empty p { font-size: 0.875rem; text-align: center; max-width: 280px; line-height: 1.5; }
+.results-empty .empty-hint { font-size: 0.78rem; color: var(--ink-3); background: #F1F5F9; padding: 0.4rem 0.85rem; border-radius: 20px; }
+
+/* ── Peril badges (reuse existing) ───────────────────────── */
+
 /* ── Peril badges ─────────────────────────────────────────── */
 .peril-bar {
   display: flex; flex-wrap: wrap; gap: 0.4rem;
@@ -481,50 +679,90 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 
   <!-- RESULTS -->
   <div class="page" id="page-results">
-    <div class="page-header">
-      <h2>Results</h2>
-      <p>Fetch and download results for the selected analysis</p>
+
+    <!-- Empty / no selection state -->
+    <div id="results-empty-state" style="display:flex; flex-direction:column; height:100%;">
+      <div class="results-empty">
+        <div class="empty-icon">◈</div>
+        <p>No analysis selected yet.</p>
+        <span class="empty-hint">Go to Projects → select an analysis → come back here</span>
+      </div>
     </div>
 
-    <div id="no-selection" class="alert alert-info">
-      ℹ No analysis selected — go to <strong>Projects</strong> to select one first.
-    </div>
+    <!-- Main dashboard layout -->
+    <div id="results-dashboard" style="display:none; flex-direction:column; height:100%;">
 
-    <div id="results-content" style="display:none;">
-      <div class="analysis-banner" id="analysis-banner">
-        <div>
-          <div class="label">Selected Analysis</div>
-          <div class="name" id="banner-name">—</div>
-          <div class="meta" id="banner-meta">—</div>
+      <!-- Top bar -->
+      <div class="results-topbar">
+        <div class="results-topbar-left">
+          <div class="analysis-chip">
+            <div>
+              <div class="chip-label">Analysis</div>
+              <div class="chip-name" id="chip-name">—</div>
+              <div class="chip-meta" id="chip-meta">—</div>
+            </div>
+            <span id="chip-tag" class="tag" style="margin-left:0.5rem;"></span>
+          </div>
+          <div id="results-alert" style="flex:1;"></div>
         </div>
-        <div>
-          <span id="banner-tag" class="tag"></span>
+        <div class="results-topbar-right">
+          <button class="btn btn-primary" onclick="fetchResults()" style="padding:0.4rem 1rem;font-size:0.8rem;">⚡ Fetch</button>
+          <button class="btn btn-success" id="btn-download" onclick="downloadExcel()" style="display:none;padding:0.4rem 1rem;font-size:0.8rem;">⬇ Export Excel</button>
         </div>
       </div>
 
-      <div class="filename-row" id="filename-row" style="display:none;">
-        <label>File name</label>
-        <input type="text" id="custom-filename" placeholder="e.g. DefaultUW_ELT_Report" />
-        <span class="ext">.xlsx</span>
-      </div>
+      <!-- Body: data panel + config panel -->
+      <div class="results-body">
 
-      <div class="btn-row">
-        <button class="btn btn-primary" onclick="fetchResults()">⚡ Fetch Results</button>
-        <button class="btn btn-success" id="btn-download" onclick="downloadExcel()" style="display:none;">⬇ Download Excel</button>
-      </div>
+        <!-- LEFT: Data panel -->
+        <div class="data-panel">
+          <!-- Tabs -->
+          <div class="data-panel-tabs" id="dp-tabs"></div>
+          <!-- Metrics row -->
+          <div class="data-panel-metrics" id="dp-metrics" style="display:none;"></div>
+          <!-- Peril bar -->
+          <div class="data-panel-peril" id="peril-bar">
+            <span class="dp-peril-label">Perils</span>
+            <div id="peril-badges"></div>
+          </div>
+          <!-- Table -->
+          <div class="data-panel-table" id="dp-table">
+            <div class="data-panel-empty">Fetch results to preview data</div>
+          </div>
+        </div>
 
-      <div id="results-alert"></div>
-      <div id="results-metrics" style="display:none;"></div>
-      <div id="peril-bar" style="display:none;" class="peril-bar">
-        <span class="peril-bar-label">Perils</span>
-        <div id="peril-badges"></div>
+        <!-- RIGHT: Config panel -->
+        <div class="config-panel">
+          <div class="config-panel-header">
+            <h3>Export Configuration</h3>
+            <p>Select columns to include in the Excel export</p>
+          </div>
+          <div class="config-filename" id="filename-row" style="display:none;">
+            <label>File name</label>
+            <div class="config-filename-row">
+              <input type="text" id="custom-filename" placeholder="e.g. DefaultUW_ELT" />
+              <span class="ext">.xlsx</span>
+            </div>
+          </div>
+          <div class="config-cols" id="col-selectors">
+            <div style="text-align:center;padding:2rem 1rem;color:var(--ink-3);font-size:0.8rem;">
+              Fetch results to configure columns
+            </div>
+          </div>
+        </div>
+
       </div>
-      <div id="col-selector-wrap" style="display:none;">
-        <div class="section-label">Column selection</div>
-        <div id="col-selectors"></div>
-      </div>
-      <div id="results-tabs" style="display:none;"></div>
     </div>
+
+    <!-- Legacy hidden elements for JS compatibility -->
+    <div style="display:none;">
+      <div id="results-content"></div>
+      <div id="col-selector-wrap"></div>
+      <div id="results-metrics"></div>
+      <div id="results-tabs"></div>
+      <div id="no-selection"></div>
+    </div>
+
   </div>
 
   <!-- HISTORY -->
@@ -751,10 +989,9 @@ function selectAnalysis(sid, name, type) {
   state.lastResults = null;
   document.getElementById('btn-download').style.display = 'none';
   document.getElementById('filename-row').style.display = 'none';
-  document.getElementById('col-selector-wrap').style.display = 'none';
-  document.getElementById('peril-bar').style.display = 'none';
   state.selectedCols = {};
-  state.lastPerils = [];
+  state.lastPerils   = [];
+  state._activeTab   = null;
   // Show persistent toast
   document.getElementById('toast-tag').textContent  = type;
   document.getElementById('toast-msg').textContent  = `${name} (SID: ${sid}) selected`;
@@ -771,10 +1008,9 @@ function goToResults() {
   state.lastResults = null;
   document.getElementById('btn-download').style.display = 'none';
   document.getElementById('filename-row').style.display = 'none';
-  document.getElementById('col-selector-wrap').style.display = 'none';
-  document.getElementById('peril-bar').style.display = 'none';
   state.selectedCols = {};
-  state.lastPerils = [];
+  state.lastPerils   = [];
+  state._activeTab   = null;
   document.getElementById('results-metrics').style.display = 'none';
   document.getElementById('results-tabs').style.display = 'none';
   document.getElementById('results-alert').innerHTML = '';
@@ -786,16 +1022,22 @@ function goToResults() {
 // ── Results ────────────────────────────────────────────────────────────────
 function renderResultsPage() {
   const s = state.selected;
+  const emptyEl = document.getElementById('results-empty-state');
+  const dashEl  = document.getElementById('results-dashboard');
+
   if (!s?.sid) {
-    document.getElementById('no-selection').style.display = 'flex';
-    document.getElementById('results-content').style.display = 'none';
+    emptyEl.style.display = 'flex';
+    dashEl.style.display  = 'none';
     return;
   }
-  document.getElementById('no-selection').style.display = 'none';
-  document.getElementById('results-content').style.display = 'block';
-  document.getElementById('banner-name').textContent = s.name;
-  document.getElementById('banner-meta').textContent = `Project: ${s.projectName} · SID: ${s.sid}`;
-  const tag = document.getElementById('banner-tag');
+
+  emptyEl.style.display = 'none';
+  dashEl.style.display  = 'flex';
+
+  // Update top bar chip
+  document.getElementById('chip-name').textContent = s.name;
+  document.getElementById('chip-meta').textContent = `${s.projectName} · SID: ${s.sid}`;
+  const tag = document.getElementById('chip-tag');
   tag.textContent = s.type;
   tag.className = `tag tag-${s.type.toLowerCase()}`;
 
@@ -858,76 +1100,120 @@ function renderPerilBar(perils) {
 function renderResultsData(data, type) {
   const keys  = Object.keys(data);
   const total = keys.reduce((a,k) => a + (data[k].count||0), 0);
+  state._activeTab = state._activeTab && keys.includes(state._activeTab) ? state._activeTab : keys[0];
 
   // Metrics
-  const metricsEl = document.getElementById('results-metrics');
+  const metricsEl = document.getElementById('dp-metrics');
   metricsEl.style.display = 'grid';
-  metricsEl.className = 'metrics';
-
   if (type === 'LOSS') {
     const elt  = data['ELT']          || { count: 0 };
     const ep   = data['EP Curves']    || { count: 0 };
     const summ = data['Loss Summary'] || { count: 0 };
     metricsEl.innerHTML = `
-      <div class="metric"><div class="metric-label">ELT Records</div><div class="metric-value">${elt.count.toLocaleString()}</div><div class="metric-sub">Event loss table</div></div>
-      <div class="metric green"><div class="metric-label">EP Curves</div><div class="metric-value">${ep.count.toLocaleString()}</div><div class="metric-sub">Annual EP data</div></div>
-      <div class="metric amber"><div class="metric-label">Loss Summary</div><div class="metric-value">${summ.count.toLocaleString()}</div><div class="metric-sub">EP distribution</div></div>`;
+      <div class="dp-metric blue"><div class="m-label">ELT Records</div><div class="m-value">${elt.count.toLocaleString()}</div><div class="m-sub">Event loss table</div></div>
+      <div class="dp-metric green"><div class="m-label">EP Curves</div><div class="m-value">${ep.count.toLocaleString()}</div><div class="m-sub">Annual EP data</div></div>
+      <div class="dp-metric amber"><div class="m-label">Loss Summary</div><div class="m-value">${summ.count.toLocaleString()}</div><div class="m-sub">EP distribution</div></div>`;
   } else {
     metricsEl.innerHTML = `
-      <div class="metric"><div class="metric-label">HAZ Categories</div><div class="metric-value">${keys.length}</div><div class="metric-sub">Hazard types</div></div>
-      <div class="metric green"><div class="metric-label">Total Records</div><div class="metric-value">${total.toLocaleString()}</div><div class="metric-sub">Across all categories</div></div>
-      <div class="metric amber"><div class="metric-label">Analysis Type</div><div class="metric-value" style="font-size:1rem;">Hazard</div><div class="metric-sub">HAZ analysis</div></div>`;
+      <div class="dp-metric blue"><div class="m-label">HAZ Categories</div><div class="m-value">${keys.length}</div><div class="m-sub">Hazard types</div></div>
+      <div class="dp-metric green"><div class="m-label">Total Records</div><div class="m-value">${total.toLocaleString()}</div><div class="m-sub">All categories</div></div>
+      <div class="dp-metric amber"><div class="m-label">Type</div><div class="m-value" style="font-size:1rem;">Hazard</div><div class="m-sub">HAZ analysis</div></div>`;
   }
 
-  // Column selectors — one per dataset
+  // Column selectors (right panel)
   state.selectedCols = {};
-  const csWrap = document.getElementById('col-selector-wrap');
-  const csEl   = document.getElementById('col-selectors');
-  csWrap.style.display = 'block';
+  const csEl = document.getElementById('col-selectors');
   csEl.innerHTML = keys.map(k => {
     const cols = data[k].columns || [];
-    state.selectedCols[k] = new Set(cols); // all selected by default
+    state.selectedCols[k] = new Set(cols);
+    const safeK = k.replace(/ /g,'_');
     return `
-      <div class="col-selector">
-        <div class="col-selector-header">
-          <span class="col-selector-title">${k} — ${cols.length} columns</span>
-          <div class="col-selector-actions">
-            <button onclick="selectAllCols('${k}', true)">Select all</button>
-            <button onclick="selectAllCols('${k}', false)">Clear all</button>
+      <div class="col-card">
+        <div class="col-card-header">
+          <div>
+            <span class="col-card-title">${k}</span>
+            <span class="col-card-count"> · ${cols.length} cols</span>
+          </div>
+          <div class="col-card-actions">
+            <button onclick="selectAllCols('${k}', true)">All</button>
+            <button onclick="selectAllCols('${k}', false)">None</button>
           </div>
         </div>
-        <div class="col-grid" id="col-grid-${k.replace(/ /g,'_')}">
+        <div class="col-card-body" id="col-grid-${safeK}">
           ${cols.map(c => `
-            <div class="col-row checked" id="row-${k.replace(/ /g,'_')}-${escHtml(c)}" onclick="toggleCol('${k}','${escHtml(c)}')">
-              <input type="checkbox" checked id="chk-${k.replace(/ /g,'_')}-${escHtml(c)}" onchange="toggleCol('${k}','${escHtml(c)}')"/>
-              <label for="chk-${k.replace(/ /g,'_')}-${escHtml(c)}">${escHtml(c)}</label>
-            </div>`).join('')}
+            <label class="col-pill selected">
+              <input type="checkbox" checked onchange="toggleCol('${k}','${escHtml(c)}',this.checked)"/>
+              ${escHtml(c)}
+            </label>`).join('')}
         </div>
       </div>`;
   }).join('');
 
   // Tabs
-  const tabsEl = document.getElementById('results-tabs');
-  tabsEl.style.display = 'block';
-  const tabBtns   = keys.map((k,i) => `<button class="tab-btn ${i===0?'active':''}" onclick="switchTab(${i})">${k} (${(data[k].count||0).toLocaleString()})</button>`).join('');
-  const tabPanels = keys.map((k,i) => `
-    <div class="tab-panel ${i===0?'active':''}" id="tab-panel-${i}">
-      <div class="table-wrap">${buildTable(data[k])}</div>
-    </div>`).join('');
-  tabsEl.innerHTML = `<div class="tabs">${tabBtns}</div>${tabPanels}`;
+  const tabsEl = document.getElementById('dp-tabs');
+  tabsEl.innerHTML = keys.map((k) => `
+    <button class="dp-tab ${k===state._activeTab?'active':''}" onclick="switchDpTab('${k}')">
+      ${k}<span class="tab-count">${(data[k].count||0).toLocaleString()}</span>
+    </button>`).join('');
+
+  renderDpTable(state._activeTab, data);
+
+  // Show filename + download
+  document.getElementById('filename-row').style.display = 'block';
+  document.getElementById('btn-download').style.display = 'inline-flex';
+  const defaultName = (state.selected?.name || 'Report').replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
+  if (!document.getElementById('custom-filename').value)
+    document.getElementById('custom-filename').value = defaultName;
 }
 
-function toggleCol(dataset, col) {
+function switchDpTab(key) {
+  state._activeTab = key;
+  document.querySelectorAll('.dp-tab').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim().startsWith(key));
+  });
+  renderDpTable(key, state.lastResults);
+}
+
+function renderDpTable(key, data) {
+  const tableEl = document.getElementById('dp-table');
+  if (!data || !data[key]) {
+    tableEl.innerHTML = '<div class="data-panel-empty">No data for this dataset</div>';
+    return;
+  }
+  const selected = state.selectedCols?.[key];
+  const dataset  = data[key];
+  let cols = dataset.columns || [];
+  let rows = dataset.rows    || [];
+  if (selected && selected.size > 0) {
+    const indices = cols.map((c,i) => ({c,i})).filter(({c}) => selected.has(c));
+    cols = indices.map(({c}) => c);
+    rows = rows.map(r => indices.map(({i}) => r[i]));
+  }
+  if (!cols.length) {
+    tableEl.innerHTML = '<div class="data-panel-empty">No columns selected — choose columns in the panel →</div>';
+    return;
+  }
+  const shown = rows.slice(0, 500);
+  const hdr   = cols.map(c => `<th>${escHtml(c)}</th>`).join('');
+  const body  = shown.map(r => `<tr>${r.map(v => `<td>${v===null||v===undefined?'<span style="color:var(--ink-3)">—</span>':escHtml(String(v))}</td>`).join('')}</tr>`).join('');
+  const note  = rows.length > 500 ? `<div style="padding:0.5rem 0.85rem;font-size:0.72rem;color:var(--ink-3);border-top:1px solid var(--border);">Showing first 500 of ${rows.length.toLocaleString()} rows — full dataset exported to Excel</div>` : '';
+  tableEl.innerHTML = `<table><thead><tr>${hdr}</tr></thead><tbody>${body}</tbody></table>${note}`;
+}
+
+function toggleCol(dataset, col, checked) {
   if (!state.selectedCols) return;
   if (!state.selectedCols[dataset]) state.selectedCols[dataset] = new Set();
-  const isChecked = state.selectedCols[dataset].has(col);
-  isChecked ? state.selectedCols[dataset].delete(col) : state.selectedCols[dataset].add(col);
-  const rowId = 'row-' + dataset.replace(/ /g,'_') + '-' + col;
-  const chkId = 'chk-' + dataset.replace(/ /g,'_') + '-' + col;
-  const row = document.getElementById(rowId);
-  const chk = document.getElementById(chkId);
-  if (row) row.classList.toggle('checked', !isChecked);
-  if (chk) chk.checked = !isChecked;
+  checked ? state.selectedCols[dataset].add(col) : state.selectedCols[dataset].delete(col);
+  const gridId = 'col-grid-' + dataset.replace(/ /g,'_');
+  const grid = document.getElementById(gridId);
+  if (grid) {
+    grid.querySelectorAll('.col-pill').forEach(chip => {
+      const label = chip.textContent.trim();
+      chip.classList.toggle('selected', state.selectedCols[dataset].has(label));
+    });
+  }
+  if (state._activeTab === dataset && state.lastResults)
+    renderDpTable(dataset, state.lastResults);
 }
 
 function selectAllCols(dataset, selectAll) {
@@ -935,13 +1221,19 @@ function selectAllCols(dataset, selectAll) {
   state.selectedCols[dataset] = selectAll ? new Set(cols) : new Set();
   const gridId = 'col-grid-' + dataset.replace(/ /g,'_');
   const grid = document.getElementById(gridId);
-  if (!grid) return;
-  grid.querySelectorAll('.col-row').forEach(row => {
-    row.classList.toggle('checked', selectAll);
-    const chk = row.querySelector('input[type="checkbox"]');
-    if (chk) chk.checked = selectAll;
-  });
+  if (grid) {
+    grid.querySelectorAll('.col-pill').forEach(chip => {
+      chip.classList.toggle('selected', selectAll);
+      chip.querySelector('input').checked = selectAll;
+    });
+  }
+  if (state._activeTab === dataset && state.lastResults)
+    renderDpTable(dataset, state.lastResults);
 }
+
+
+
+
 
 function switchTab(idx) {
   document.querySelectorAll('.tab-btn').forEach((b,i)   => b.classList.toggle('active', i===idx));
