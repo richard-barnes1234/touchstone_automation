@@ -279,9 +279,9 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 }
 .col-selector-actions button:hover { background: var(--border); color: var(--ink); }
 .col-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   max-height: 220px;
   overflow-y: auto;
   padding: 2px;
