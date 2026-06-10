@@ -5,6 +5,7 @@
 from flask import Flask, jsonify, request, send_file, render_template_string
 import urllib3
 import pandas as pd
+from peril_lookup import get_peril_description, get_unique_perils
 from io import BytesIO
 from datetime import datetime
 from openpyxl import Workbook
@@ -133,6 +134,7 @@ def api_haz_results(analysis_sid):
         from touchstone_client import get_hazard_results
         results = get_hazard_results(int(analysis_sid))
         data = {}
+        perils = []
         for k, df in results.items():
             if not df.empty:
                 df = df.replace([float('inf'), float('-inf')], None)
@@ -146,7 +148,10 @@ def api_haz_results(analysis_sid):
                     "rows":    rows,
                     "count":   len(df)
                 }
-        return jsonify({"ok": True, "data": data})
+                # Collect unique perils from ELT
+                if k == 'ELT':
+                    perils = get_unique_perils(df)
+        return jsonify({"ok": True, "data": data, "perils": perils})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 

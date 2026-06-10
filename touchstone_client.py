@@ -8,6 +8,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from api_client import send_soap_request
 from config import BUSINESS_UNIT_SID, SQL_INSTANCE_SID
+from peril_lookup import enrich_with_peril, get_unique_perils
 from soap_templates import (
     get_detailed_loss_analyses,
     get_loss_analysis_event_results,
@@ -80,7 +81,8 @@ def get_all_loss_data(analysis_sid):
 
     try:
         r = send_soap_request(get_loss_analysis_event_results(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, analysis_sid))
-        results['ELT'] = _parse(r.text, 'EventLoss') if r.status_code == 200 else pd.DataFrame()
+        df_elt = _parse(r.text, 'EventLoss') if r.status_code == 200 else pd.DataFrame()
+        results['ELT'] = enrich_with_peril(df_elt)
     except:
         results['ELT'] = pd.DataFrame()
 

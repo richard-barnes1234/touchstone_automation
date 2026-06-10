@@ -241,6 +241,25 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 .empty .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .empty p { font-size: 0.875rem; }
 
+/* ── Peril badges ─────────────────────────────────────────── */
+.peril-bar {
+  display: flex; flex-wrap: wrap; gap: 0.4rem;
+  align-items: center; margin-bottom: 1rem;
+}
+.peril-bar-label { font-size: 0.72rem; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; margin-right: 0.25rem; }
+.peril-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+.peril-wind      { background: #DBEAFE; color: #1E40AF; border-color: #BFDBFE; }
+.peril-earthquake{ background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
+.peril-flood     { background: #DCFCE7; color: #166534; border-color: #BBF7D0; }
+.peril-storm     { background: #F3E8FF; color: #6B21A8; border-color: #E9D5FF; }
+.peril-fire      { background: #FEE2E2; color: #991B1B; border-color: #FECACA; }
+.peril-terrorism { background: #F1F5F9; color: #475569; border-color: #E2E8F0; }
+.peril-other     { background: #F1F5F9; color: #475569; border-color: #E2E8F0; }
+
 /* ── Column selector ─────────────────────────────────────── */
 .col-selector {
   background: var(--surface); border: 1px solid var(--border);
@@ -489,6 +508,10 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 
       <div id="results-alert"></div>
       <div id="results-metrics" style="display:none;"></div>
+      <div id="peril-bar" style="display:none;" class="peril-bar">
+        <span class="peril-bar-label">Perils</span>
+        <div id="peril-badges"></div>
+      </div>
       <div id="col-selector-wrap" style="display:none;">
         <div class="section-label">Column selection</div>
         <div id="col-selectors"></div>
@@ -722,7 +745,9 @@ function selectAnalysis(sid, name, type) {
   document.getElementById('btn-download').style.display = 'none';
   document.getElementById('filename-row').style.display = 'none';
   document.getElementById('col-selector-wrap').style.display = 'none';
+  document.getElementById('peril-bar').style.display = 'none';
   state.selectedCols = {};
+  state.lastPerils = [];
   // Show persistent toast
   document.getElementById('toast-tag').textContent  = type;
   document.getElementById('toast-msg').textContent  = `${name} (SID: ${sid}) selected`;
@@ -740,7 +765,9 @@ function goToResults() {
   document.getElementById('btn-download').style.display = 'none';
   document.getElementById('filename-row').style.display = 'none';
   document.getElementById('col-selector-wrap').style.display = 'none';
+  document.getElementById('peril-bar').style.display = 'none';
   state.selectedCols = {};
+  state.lastPerils = [];
   document.getElementById('results-metrics').style.display = 'none';
   document.getElementById('results-tabs').style.display = 'none';
   document.getElementById('results-alert').innerHTML = '';
@@ -785,7 +812,9 @@ async function fetchResults() {
     if (!j.ok) throw new Error(j.error);
 
     state.lastResults = j.data;
+    state.lastPerils  = j.perils || [];
     renderResultsData(j.data, s.type);
+    renderPerilBar(j.perils || []);
     document.getElementById('btn-download').style.display = 'inline-flex';
     document.getElementById('filename-row').style.display = 'flex';
     // Pre-fill filename with analysis name
@@ -794,6 +823,29 @@ async function fetchResults() {
   } catch(e) {
     document.getElementById('results-alert').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
   } finally { hideLoading(); }
+}
+
+function getPerilClass(peril) {
+  const p = peril.toLowerCase();
+  if (p.includes('wind') || p.includes('tropical') || p.includes('hurricane')) return 'peril-wind';
+  if (p.includes('earthquake') || p.includes('fire following') || p.includes('sprinkler')) return 'peril-earthquake';
+  if (p.includes('flood') || p.includes('surge') || p.includes('tsunami')) return 'peril-flood';
+  if (p.includes('thunderstorm') || p.includes('winter') || p.includes('hail') || p.includes('tornado') || p.includes('wildfire')) return 'peril-storm';
+  if (p.includes('terrorism')) return 'peril-terrorism';
+  return 'peril-other';
+}
+
+function renderPerilBar(perils) {
+  const bar = document.getElementById('peril-bar');
+  const badges = document.getElementById('peril-badges');
+  if (!perils || !perils.length) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = 'flex';
+  badges.innerHTML = perils.map(p =>
+    `<span class="peril-badge ${getPerilClass(p)}">${escHtml(p)}</span>`
+  ).join('');
 }
 
 function renderResultsData(data, type) {
