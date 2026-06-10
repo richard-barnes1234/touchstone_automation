@@ -279,23 +279,30 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 }
 .col-selector-actions button:hover { background: var(--border); color: var(--ink); }
 .col-grid {
-  display: flex; flex-wrap: wrap; gap: 0.4rem; max-height: 160px;
-  overflow-y: auto; padding: 2px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.15rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 2px;
 }
-.col-chip {
-  display: flex; align-items: center; gap: 0.3rem;
-  padding: 0.25rem 0.6rem; border-radius: 20px;
-  border: 1px solid var(--border); background: var(--bg);
-  font-size: 0.72rem; font-family: var(--font-mono);
-  color: var(--ink-2); cursor: pointer; user-select: none;
-  transition: all 0.12s;
+.col-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.3rem 0.5rem; border-radius: 5px;
+  cursor: pointer; transition: background 0.1s;
+  user-select: none;
 }
-.col-chip input { display: none; }
-.col-chip.selected {
-  background: var(--accent); border-color: var(--accent);
-  color: #fff;
+.col-row:hover { background: var(--bg); }
+.col-row input[type="checkbox"] {
+  width: 14px; height: 14px; cursor: pointer;
+  accent-color: var(--accent); flex-shrink: 0;
 }
-.col-chip:hover { border-color: var(--accent-2); }
+.col-row label {
+  font-size: 0.78rem; font-family: var(--font-mono);
+  color: var(--ink-2); cursor: pointer; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.col-row.checked label { color: var(--ink); font-weight: 500; }
 
 /* ── Filename input ───────────────────────────────────────── */
 .filename-row {
@@ -891,10 +898,10 @@ function renderResultsData(data, type) {
         </div>
         <div class="col-grid" id="col-grid-${k.replace(/ /g,'_')}">
           ${cols.map(c => `
-            <label class="col-chip selected">
-              <input type="checkbox" checked onchange="toggleCol('${k}','${escHtml(c)}',this.checked)"/>
-              ${escHtml(c)}
-            </label>`).join('')}
+            <div class="col-row checked" id="row-${k.replace(/ /g,'_')}-${escHtml(c)}" onclick="toggleCol('${k}','${escHtml(c)}')">
+              <input type="checkbox" checked id="chk-${k.replace(/ /g,'_')}-${escHtml(c)}" onchange="toggleCol('${k}','${escHtml(c)}')"/>
+              <label for="chk-${k.replace(/ /g,'_')}-${escHtml(c)}">${escHtml(c)}</label>
+            </div>`).join('')}
         </div>
       </div>`;
   }).join('');
@@ -910,33 +917,29 @@ function renderResultsData(data, type) {
   tabsEl.innerHTML = `<div class="tabs">${tabBtns}</div>${tabPanels}`;
 }
 
-function toggleCol(dataset, col, checked) {
+function toggleCol(dataset, col) {
   if (!state.selectedCols) return;
   if (!state.selectedCols[dataset]) state.selectedCols[dataset] = new Set();
-  checked ? state.selectedCols[dataset].add(col) : state.selectedCols[dataset].delete(col);
-  // Update chip style
-  const gridId = 'col-grid-' + dataset.replace(/ /g,'_');
-  const grid = document.getElementById(gridId);
-  if (!grid) return;
-  grid.querySelectorAll('.col-chip').forEach(chip => {
-    const label = chip.textContent.trim();
-    chip.classList.toggle('selected', state.selectedCols[dataset].has(label));
-  });
+  const isChecked = state.selectedCols[dataset].has(col);
+  isChecked ? state.selectedCols[dataset].delete(col) : state.selectedCols[dataset].add(col);
+  const rowId = 'row-' + dataset.replace(/ /g,'_') + '-' + col;
+  const chkId = 'chk-' + dataset.replace(/ /g,'_') + '-' + col;
+  const row = document.getElementById(rowId);
+  const chk = document.getElementById(chkId);
+  if (row) row.classList.toggle('checked', !isChecked);
+  if (chk) chk.checked = !isChecked;
 }
 
 function selectAllCols(dataset, selectAll) {
   const cols = state.lastResults?.[dataset]?.columns || [];
-  if (selectAll) {
-    state.selectedCols[dataset] = new Set(cols);
-  } else {
-    state.selectedCols[dataset] = new Set();
-  }
+  state.selectedCols[dataset] = selectAll ? new Set(cols) : new Set();
   const gridId = 'col-grid-' + dataset.replace(/ /g,'_');
   const grid = document.getElementById(gridId);
   if (!grid) return;
-  grid.querySelectorAll('.col-chip').forEach(chip => {
-    chip.classList.toggle('selected', selectAll);
-    chip.querySelector('input').checked = selectAll;
+  grid.querySelectorAll('.col-row').forEach(row => {
+    row.classList.toggle('checked', selectAll);
+    const chk = row.querySelector('input[type="checkbox"]');
+    if (chk) chk.checked = selectAll;
   });
 }
 
