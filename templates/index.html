@@ -281,8 +281,8 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 
 /* ── Left: data panel (70%) ───────────────────────────────── */
 .data-panel {
-  flex: 3; display: flex; flex-direction: column;
-  overflow: hidden; min-width: 0; max-width: 75%;
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; min-width: 0;
   background: #F5F7FA;
 }
 
@@ -366,75 +366,81 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
   box-shadow: var(--shadow);
 }
 
-/* ── Right: config panel (30%) ────────────────────────────── */
-.config-panel {
-  flex: 1; min-width: 220px; max-width: 25%;
-  display: flex; flex-direction: column;
-  background: var(--surface);
-  border-left: 1px solid var(--border);
-  overflow: hidden; flex-shrink: 0;
-}
-.config-panel-header {
-  padding: 1rem 1.25rem 0.75rem;
+/* ── Compact dropdown column filters ──────────────────────── */
+.col-filter-bar {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 1rem; background: var(--surface);
   border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  flex-shrink: 0; flex-wrap: wrap;
 }
-.config-panel-header h3 {
-  font-family: var(--font-head); font-size: 0.875rem; font-weight: 700;
-  color: var(--ink); letter-spacing: -0.01em;
+.col-filter-bar-label {
+  font-size: 0.68rem; font-weight: 600; color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;
 }
-.config-panel-header p { font-size: 0.72rem; color: var(--ink-2); margin-top: 2px; }
+.col-dropdown-wrap { position: relative; }
+.col-dropdown-btn {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.35rem 0.7rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 7px;
+  font-size: 0.75rem; font-family: var(--font-body);
+  color: var(--ink); cursor: pointer; transition: all 0.15s;
+  white-space: nowrap; user-select: none;
+}
+.col-dropdown-btn:hover { border-color: var(--accent-2); background: #EFF6FF; }
+.col-dropdown-btn.open  { border-color: var(--accent); background: #EFF6FF; box-shadow: 0 0 0 2px rgba(46,91,154,0.12); }
+.col-dropdown-btn .btn-name { font-weight: 600; color: var(--ink-2); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.col-dropdown-btn .btn-count { background: #DBEAFE; color: var(--accent); border-radius: 10px; padding: 1px 6px; font-size: 0.65rem; font-weight: 700; }
+.col-dropdown-btn .btn-arrow { color: var(--ink-3); font-size: 0.6rem; transition: transform 0.15s; }
+.col-dropdown-btn.open .btn-arrow { transform: rotate(180deg); }
 
-.config-filename {
-  padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+.col-dropdown-panel {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: var(--shadow-lg);
+  z-index: 200; min-width: 220px; max-width: 280px;
+  overflow: hidden;
 }
-.config-filename label { font-size: 0.72rem; font-weight: 600; color: var(--ink-2); display: block; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.06em; }
-.config-filename-row { display: flex; align-items: center; gap: 0.4rem; }
-.config-filename-row input {
-  flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--border);
-  border-radius: 6px; font-size: 0.8rem; font-family: var(--font-mono);
-  color: var(--ink); outline: none;
+.col-dropdown-panel.open { display: block; }
+.col-dropdown-actions {
+  display: flex; gap: 0.3rem; padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border); background: #F8FAFC;
 }
-.config-filename-row input:focus { border-color: var(--accent-2); }
-.config-filename-row .ext { font-size: 0.75rem; color: var(--ink-3); font-family: var(--font-mono); white-space: nowrap; }
+.col-dropdown-actions button {
+  flex: 1; font-size: 0.68rem; padding: 0.25rem 0.4rem;
+  border-radius: 4px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--ink-2);
+  cursor: pointer; font-family: var(--font-body); transition: all 0.1s;
+}
+.col-dropdown-actions button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.col-dropdown-list {
+  max-height: 260px; overflow-y: auto; padding: 0.4rem 0;
+}
+.col-dropdown-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.3rem 0.75rem; cursor: pointer;
+  transition: background 0.1s; font-size: 0.75rem;
+  color: var(--ink); font-family: var(--font-mono);
+}
+.col-dropdown-item:hover { background: #EFF6FF; }
+.col-dropdown-item input[type="checkbox"] {
+  width: 13px; height: 13px; cursor: pointer;
+  accent-color: var(--accent); flex-shrink: 0;
+}
+.col-dropdown-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.config-cols { flex: 1; overflow-y: auto; padding: 0.75rem 1.25rem; }
-
-.col-card {
-  background: #F8FAFC; border: 1px solid var(--border);
-  border-radius: 8px; margin-bottom: 0.75rem; overflow: hidden;
+/* filename row in filter bar */
+.filter-filename {
+  display: none; align-items: center; gap: 0.4rem; margin-left: auto;
 }
-.col-card-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.55rem 0.75rem;
-  background: var(--surface); border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; z-index: 1;
+.filter-filename.show { display: flex; }
+.filter-filename label { font-size: 0.68rem; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+.filter-filename input {
+  padding: 0.3rem 0.55rem; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 0.75rem; font-family: var(--font-mono);
+  color: var(--ink); outline: none; width: 160px;
 }
-.col-card-title { font-size: 0.72rem; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: 0.06em; }
-.col-card-count { font-size: 0.68rem; color: var(--ink-3); font-family: var(--font-mono); }
-.col-card-actions { display: flex; gap: 0.3rem; }
-.col-card-actions button {
-  font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 4px;
-  border: 1px solid var(--border); background: var(--bg);
-  color: var(--ink-2); cursor: pointer; font-family: var(--font-body);
-  transition: all 0.1s;
-}
-.col-card-actions button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
-.col-card-body { padding: 0.5rem 0.75rem; max-height: 180px; overflow-y: auto; }
-
-.col-pill {
-  display: inline-flex; align-items: center;
-  padding: 2px 8px; margin: 2px;
-  border-radius: 12px; border: 1px solid #CBD5E1;
-  background: var(--surface); color: #475569;
-  font-size: 0.68rem; font-family: var(--font-mono);
-  cursor: pointer; user-select: none; transition: all 0.1s;
-}
-.col-pill input { display: none; }
-.col-pill.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
-.col-pill:hover { border-color: var(--accent-2); }
+.filter-filename input:focus { border-color: var(--accent-2); }
+.filter-filename .ext { font-size: 0.72rem; color: var(--ink-3); font-family: var(--font-mono); }
 
 /* ── No selection state ───────────────────────────────────── */
 .results-empty {
@@ -719,11 +725,21 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
         </div>
       </div>
 
-      <!-- Body: data panel + config panel -->
+      <!-- Body: data panel (full width) -->
       <div class="results-body">
-
-        <!-- LEFT: Data panel -->
         <div class="data-panel">
+
+          <!-- Column filter bar -->
+          <div class="col-filter-bar" id="col-filter-bar" style="display:none;">
+            <span class="col-filter-bar-label">Columns</span>
+            <div id="col-selectors" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;"></div>
+            <div class="filter-filename" id="filename-row">
+              <label>File name</label>
+              <input type="text" id="custom-filename" placeholder="e.g. DefaultUW_ELT" />
+              <span class="ext">.xlsx</span>
+            </div>
+          </div>
+
           <!-- Tabs -->
           <div class="data-panel-tabs" id="dp-tabs"></div>
           <!-- Metrics row -->
@@ -737,28 +753,8 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
           <div class="data-panel-table" id="dp-table">
             <div class="data-panel-empty">Fetch results to preview data</div>
           </div>
-        </div>
 
-        <!-- RIGHT: Config panel -->
-        <div class="config-panel">
-          <div class="config-panel-header">
-            <h3>Export Configuration</h3>
-            <p>Select columns to include in the Excel export</p>
-          </div>
-          <div class="config-filename" id="filename-row" style="display:none;">
-            <label>File name</label>
-            <div class="config-filename-row">
-              <input type="text" id="custom-filename" placeholder="e.g. DefaultUW_ELT" />
-              <span class="ext">.xlsx</span>
-            </div>
-          </div>
-          <div class="config-cols" id="col-selectors">
-            <div style="text-align:center;padding:2rem 1rem;color:var(--ink-3);font-size:0.8rem;">
-              Fetch results to configure columns
-            </div>
-          </div>
         </div>
-
       </div>
     </div>
 
@@ -996,7 +992,8 @@ function selectAnalysis(sid, name, type) {
   state.selected = { ...state.selected, sid, name, type };
   state.lastResults = null;
   document.getElementById('btn-download').style.display = 'none';
-  document.getElementById('filename-row').style.display = 'none';
+  document.getElementById('filename-row').classList.remove('show');
+  document.getElementById('col-filter-bar').style.display = 'none';
   state.selectedCols = {};
   state.lastPerils   = [];
   state._activeTab   = null;
@@ -1015,7 +1012,8 @@ function goToResults() {
   // Clear any previous results so we always fetch fresh for the selected analysis
   state.lastResults = null;
   document.getElementById('btn-download').style.display = 'none';
-  document.getElementById('filename-row').style.display = 'none';
+  document.getElementById('filename-row').classList.remove('show');
+  document.getElementById('col-filter-bar').style.display = 'none';
   state.selectedCols = {};
   state.lastPerils   = [];
   state._activeTab   = null;
@@ -1128,7 +1126,7 @@ function renderResultsData(data, type) {
       <div class="dp-metric amber"><div class="m-label">Type</div><div class="m-value" style="font-size:1rem;">Hazard</div><div class="m-sub">HAZ analysis</div></div>`;
   }
 
-  // Column selectors (right panel)
+  // Column dropdowns (filter bar)
   state.selectedCols = {};
   const csEl = document.getElementById('col-selectors');
   csEl.innerHTML = keys.map(k => {
@@ -1136,26 +1134,45 @@ function renderResultsData(data, type) {
     state.selectedCols[k] = new Set(cols);
     const safeK = k.replace(/ /g,'_');
     return `
-      <div class="col-card">
-        <div class="col-card-header">
-          <div>
-            <span class="col-card-title">${k}</span>
-            <span class="col-card-count"> · ${cols.length} cols</span>
+      <div class="col-dropdown-wrap" id="wrap-${safeK}">
+        <button class="col-dropdown-btn" id="btn-${safeK}" onclick="toggleDropdown('${safeK}')">
+          <span class="btn-name">${k}</span>
+          <span class="btn-count" id="cnt-${safeK}">${cols.length} selected</span>
+          <span class="btn-arrow">▼</span>
+        </button>
+        <div class="col-dropdown-panel" id="panel-${safeK}">
+          <div class="col-dropdown-actions">
+            <button onclick="dropdownAction('${k}','${safeK}','reset')">Reset</button>
+            <button onclick="dropdownAction('${k}','${safeK}','all')">Check All</button>
+            <button onclick="dropdownAction('${k}','${safeK}','none')">Clear All</button>
           </div>
-          <div class="col-card-actions">
-            <button onclick="selectAllCols('${k}', true)">All</button>
-            <button onclick="selectAllCols('${k}', false)">None</button>
+          <div class="col-dropdown-list" id="col-grid-${safeK}">
+            ${cols.map(c => `
+              <label class="col-dropdown-item">
+                <input type="checkbox" checked onchange="toggleCol('${k}','${escHtml(c)}',this.checked,'${safeK}')"/>
+                <span title="${escHtml(c)}">${escHtml(c)}</span>
+              </label>`).join('')}
           </div>
-        </div>
-        <div class="col-card-body" id="col-grid-${safeK}">
-          ${cols.map(c => `
-            <label class="col-pill selected">
-              <input type="checkbox" checked onchange="toggleCol('${k}','${escHtml(c)}',this.checked)"/>
-              ${escHtml(c)}
-            </label>`).join('')}
         </div>
       </div>`;
   }).join('');
+
+  // Show filter bar
+  document.getElementById('col-filter-bar').style.display = 'flex';
+
+  // Close dropdowns on outside click
+  if (!window._dropdownListenerSet) {
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.col-dropdown-wrap')) {
+        document.querySelectorAll('.col-dropdown-panel.open').forEach(p => {
+          p.classList.remove('open');
+          const btn = document.getElementById('btn-' + p.id.replace('panel-',''));
+          if (btn) btn.classList.remove('open');
+        });
+      }
+    });
+    window._dropdownListenerSet = true;
+  }
 
   // Tabs
   const tabsEl = document.getElementById('dp-tabs');
@@ -1167,7 +1184,7 @@ function renderResultsData(data, type) {
   renderDpTable(state._activeTab, data);
 
   // Show filename + download
-  document.getElementById('filename-row').style.display = 'block';
+  document.getElementById('filename-row').classList.add('show');
   document.getElementById('btn-download').style.display = 'inline-flex';
   const defaultName = (state.selected?.name || 'Report').replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
   if (!document.getElementById('custom-filename').value)
@@ -1214,36 +1231,58 @@ function renderDpTable(key, data) {
   tableEl.innerHTML = `<table><thead><tr>${hdr}</tr></thead><tbody>${body}</tbody></table>${note}`;
 }
 
-function toggleCol(dataset, col, checked) {
-  if (!state.selectedCols) return;
-  if (!state.selectedCols[dataset]) state.selectedCols[dataset] = new Set();
-  checked ? state.selectedCols[dataset].add(col) : state.selectedCols[dataset].delete(col);
-  const gridId = 'col-grid-' + dataset.replace(/ /g,'_');
-  const grid = document.getElementById(gridId);
+function toggleDropdown(safeK) {
+  const panel = document.getElementById('panel-' + safeK);
+  const btn   = document.getElementById('btn-'   + safeK);
+  const isOpen = panel.classList.contains('open');
+  // Close all others first
+  document.querySelectorAll('.col-dropdown-panel.open').forEach(p => {
+    p.classList.remove('open');
+    const b = document.getElementById('btn-' + p.id.replace('panel-',''));
+    if (b) b.classList.remove('open');
+  });
+  if (!isOpen) {
+    panel.classList.add('open');
+    btn.classList.add('open');
+  }
+}
+
+function updateDropdownCount(safeK, dataset) {
+  const cnt = state.selectedCols?.[dataset]?.size ?? 0;
+  const el  = document.getElementById('cnt-' + safeK);
+  if (el) el.textContent = cnt + ' selected';
+}
+
+function dropdownAction(dataset, safeK, action) {
+  const cols = state.lastResults?.[dataset]?.columns || [];
+  if (action === 'all' || action === 'reset') {
+    state.selectedCols[dataset] = new Set(cols);
+  } else {
+    state.selectedCols[dataset] = new Set();
+  }
+  const grid = document.getElementById('col-grid-' + safeK);
   if (grid) {
-    grid.querySelectorAll('.col-pill').forEach(chip => {
-      const label = chip.textContent.trim();
-      chip.classList.toggle('selected', state.selectedCols[dataset].has(label));
+    grid.querySelectorAll('input[type="checkbox"]').forEach((cb, i) => {
+      cb.checked = action !== 'none';
     });
   }
+  updateDropdownCount(safeK, dataset);
   if (state._activeTab === dataset && state.lastResults)
     renderDpTable(dataset, state.lastResults);
 }
 
-function selectAllCols(dataset, selectAll) {
-  const cols = state.lastResults?.[dataset]?.columns || [];
-  state.selectedCols[dataset] = selectAll ? new Set(cols) : new Set();
-  const gridId = 'col-grid-' + dataset.replace(/ /g,'_');
-  const grid = document.getElementById(gridId);
-  if (grid) {
-    grid.querySelectorAll('.col-pill').forEach(chip => {
-      chip.classList.toggle('selected', selectAll);
-      chip.querySelector('input').checked = selectAll;
-    });
-  }
+function toggleCol(dataset, col, checked, safeK) {
+  if (!state.selectedCols) return;
+  if (!state.selectedCols[dataset]) state.selectedCols[dataset] = new Set();
+  checked ? state.selectedCols[dataset].add(col) : state.selectedCols[dataset].delete(col);
+  if (safeK) updateDropdownCount(safeK, dataset);
   if (state._activeTab === dataset && state.lastResults)
     renderDpTable(dataset, state.lastResults);
 }
+
+
+
+// selectAllCols handled by dropdownAction
 
 
 
