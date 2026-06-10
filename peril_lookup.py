@@ -74,13 +74,16 @@ def enrich_with_peril(df):
     Adds PerilDescription column to a DataFrame containing PeriSetCode.
     Inserts right after PeriSetCode. Safe to call on any DataFrame.
     """
-    if df is None or df.empty or 'PeriSetCode' not in df.columns:
+    if df is None or df.empty:
+        return df
+    col = next((c for c in df.columns if c in ('PerilCode', 'PeriSetCode', 'PerilSetCode')), None)
+    if not col:
         return df
     df = df.copy()
     df.insert(
-        df.columns.get_loc('PeriSetCode') + 1,
+        df.columns.get_loc('PerilDescription') + 1,
         'PerilDescription',
-        df['PeriSetCode'].apply(get_peril_description)
+        df[col].apply(get_peril_description)
     )
     return df
 
