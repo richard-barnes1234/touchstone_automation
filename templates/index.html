@@ -70,8 +70,8 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
 }
 
 /* ── Main ─────────────────────────────────────────────────── */
-.main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
-.page { display: none; padding: 2rem 2.5rem; max-width: 1280px; }
+.main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; overflow-x: hidden; min-width: 0; }
+.page { display: none; padding: 2rem 2.5rem; max-width: 1280px; overflow-x: hidden; }
 .page.active { display: block; }
 
 /* ── Page Header ──────────────────────────────────────────── */
@@ -245,6 +245,7 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 #page-results {
   padding: 0 !important;
   max-width: 100% !important;
+  width: 100%;
   height: 100vh;
   display: none;
   flex-direction: column;
@@ -275,12 +276,13 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 
 .results-body {
   display: flex; flex: 1; overflow: hidden; min-height: 0;
+  width: 100%; min-width: 0;
 }
 
 /* ── Left: data panel (70%) ───────────────────────────────── */
 .data-panel {
-  flex: 1; display: flex; flex-direction: column;
-  overflow: hidden; min-width: 0;
+  flex: 3; display: flex; flex-direction: column;
+  overflow: hidden; min-width: 0; max-width: 75%;
   background: #F5F7FA;
 }
 
@@ -304,8 +306,8 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 .dp-tab.active .tab-count { background: #DBEAFE; color: var(--accent); }
 
 .data-panel-metrics {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;
-  padding: 0.75rem 1.25rem; background: #F5F7FA; flex-shrink: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;
+  padding: 0.5rem 1rem; background: #F5F7FA; flex-shrink: 0;
 }
 .dp-metric {
   background: var(--surface); border: 1px solid var(--border);
@@ -313,7 +315,7 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 .dp-metric .m-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-3); margin-bottom: 0.2rem; }
-.dp-metric .m-value { font-family: var(--font-head); font-size: 1.3rem; font-weight: 700; color: var(--ink); line-height: 1; }
+.dp-metric .m-value { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; color: var(--ink); line-height: 1; }
 .dp-metric .m-sub   { font-size: 0.72rem; color: var(--ink-2); margin-top: 0.15rem; }
 .dp-metric.blue  { border-top: 2px solid #3B82F6; }
 .dp-metric.green { border-top: 2px solid #10B981; }
@@ -329,18 +331,18 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 
 .data-panel-table {
   flex: 1; overflow: auto; padding: 0 1.25rem 1.25rem;
-  min-height: 0;
+  min-height: 0; min-width: 0;
 }
 .data-panel-table table {
-  width: 100%; border-collapse: collapse; font-size: 0.78rem;
+  width: max-content; min-width: 100%; border-collapse: collapse; font-size: 0.74rem;
   background: var(--surface); border-radius: 10px;
   overflow: hidden; box-shadow: var(--shadow);
 }
 .data-panel-table thead th {
   background: var(--accent); color: #fff;
-  padding: 0.6rem 0.85rem; text-align: left;
-  font-weight: 600; font-size: 0.7rem;
-  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 0.55rem 0.75rem; text-align: left;
+  font-weight: 600; font-size: 0.68rem;
+  text-transform: uppercase; letter-spacing: 0.04em;
   white-space: nowrap; position: sticky; top: 0; z-index: 2;
 }
 .data-panel-table tbody tr { border-bottom: 1px solid #F1F5F9; transition: background 0.1s; }
@@ -348,9 +350,15 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 .data-panel-table tbody tr:nth-child(even) { background: #F8FAFC; }
 .data-panel-table tbody tr:hover { background: #EFF6FF; }
 .data-panel-table tbody td {
-  padding: 0.45rem 0.85rem; color: var(--ink);
-  white-space: nowrap; font-family: var(--font-mono); font-size: 0.75rem;
+  padding: 0.4rem 0.75rem; color: var(--ink);
+  white-space: nowrap; font-family: var(--font-mono); font-size: 0.72rem;
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis;
 }
+.data-panel-table tbody td.col-eventdesc {
+  max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  cursor: default;
+}
+.data-panel-table tbody td:not(.col-eventdesc) { max-width: 160px; }
 .data-panel-empty {
   display: flex; align-items: center; justify-content: center;
   height: 200px; color: var(--ink-3); font-size: 0.875rem;
@@ -360,11 +368,11 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 
 /* ── Right: config panel (30%) ────────────────────────────── */
 .config-panel {
-  width: 300px; flex-shrink: 0;
+  flex: 1; min-width: 220px; max-width: 25%;
   display: flex; flex-direction: column;
   background: var(--surface);
   border-left: 1px solid var(--border);
-  overflow: hidden;
+  overflow: hidden; flex-shrink: 0;
 }
 .config-panel-header {
   padding: 1rem 1.25rem 0.75rem;
@@ -1195,7 +1203,13 @@ function renderDpTable(key, data) {
   }
   const shown = rows.slice(0, 500);
   const hdr   = cols.map(c => `<th>${escHtml(c)}</th>`).join('');
-  const body  = shown.map(r => `<tr>${r.map(v => `<td>${v===null||v===undefined?'<span style="color:var(--ink-3)">—</span>':escHtml(String(v))}</td>`).join('')}</tr>`).join('');
+  const body  = shown.map(r => `<tr>${r.map((v, ci) => {
+    const isEventDesc = cols[ci] === 'EventDescription';
+    const val = v===null||v===undefined ? '<span style="color:var(--ink-3)">—</span>' : escHtml(String(v));
+    const title = (v && String(v).length > 20) ? ` title="${escHtml(String(v))}"` : '';
+    const cls = isEventDesc ? ' class="col-eventdesc"' : '';
+    return `<td${cls}${title}>${val}</td>`;
+  }).join('')}</tr>`).join('');
   const note  = rows.length > 500 ? `<div style="padding:0.5rem 0.85rem;font-size:0.72rem;color:var(--ink-3);border-top:1px solid var(--border);">Showing first 500 of ${rows.length.toLocaleString()} rows — full dataset exported to Excel</div>` : '';
   tableEl.innerHTML = `<table><thead><tr>${hdr}</tr></thead><tbody>${body}</tbody></table>${note}`;
 }
