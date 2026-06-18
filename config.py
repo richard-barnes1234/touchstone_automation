@@ -42,18 +42,18 @@ DATA_SOURCE_SID   = int(os.environ.get("TOUCHSTONE_DATA_SOURCE_SID",  "2"))
 
 _CREDENTIAL_MAP = {
     "dev":  {
-        "username_var": "automationservice",
-        "password_var": "wiT&qBr2rfY@V4Ey",
+        "username_var": "TOUCHSTONE_DEV_USERNAME",
+        "password_var": "TOUCHSTONE_DEV_PASSWORD",
         "account_name": "automation-dev",
     },
     "uat":  {
-        "username_var": "automationservice",
-        "password_var": "tBaecj*6Iep$N3^C",
-        "account_name": "automationservice",   # existing account repurposed
+        "username_var": "TOUCHSTONE_UAT_USERNAME",
+        "password_var": "TOUCHSTONE_UAT_PASSWORD",
+        "account_name": "automationservice",
     },
     "prod": {
-        "username_var": "automationservice",
-        "password_var": "jnsAowoM1ws!qYUt",
+        "username_var": "TOUCHSTONE_PROD_USERNAME",
+        "password_var": "TOUCHSTONE_PROD_PASSWORD",
         "account_name": "automation-prod",
     },
 }
