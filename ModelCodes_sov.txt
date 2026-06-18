@@ -1,0 +1,67 @@
+ModelCode	Model
+1	The AIR Terrorism Model
+2	AIR U.S. Workers Compensation Model
+3	AIR Japan Personal Accident
+4	AIR Longevity
+5	AIR Wildfire Model for  the U.S.
+6	AIR Bushfire Model for Australia 
+7	AIR Multiple-Peril Crop Insurance Model for the U.S.
+8	AIR Inland Flood Model for the U.S.
+11	AIR Earthquake Model for the U.S. and Canada
+12	AIR Earthquake Model for Canada
+13	AIR Earthquake Model for Hawaii
+14	AIR Earthquake Model for Alaska
+15	AIR Earthquake Model for the Caribbean
+18	AIR Japan Inland Flood Model
+20	AIR Severe Thunderstorm Model for the U.S. and Canada
+21	AIR Hurricane Model for the United States
+22	AIR Severe Thunderstorm Model for the U.S.
+23	AIR Hurricane Model for Hawaii
+24	AIR Hurricane Model for Offshore Assets
+25	AIR Tropical Cyclone Model for the Caribbean
+26	AIR Severe Thunderstorm Model for Canada
+27	AIR North Atlantic Basinwide Hurricane Model
+28	AIR Winter Storm Model for the U.S.
+29	AIR Tropical Cyclone Model for Mexico
+30	AIR Tropical Cyclone Model for Canada
+31	AIR Earthquake Model for the Pan-European Region
+33	AIR Earthquake Model for Southeast Europe
+41	AIR Extra Tropical Cyclone Model for Europe
+42	AIR Winter Storm Model for Canada
+43	AIR Severe Thunderstorm Model for Europe
+44	AIR Severe Thunderstorm Model for Australia
+51	AIR Earthquake Model for Australia
+52	AIR Earthquake Model for Japan
+53	AIR Earthquake Model for New Zealand
+54	AIR Earthquake Model for Southeast Asia
+55	AIR Earthquake Model for China
+58	AIR Earthquake Model for India
+60	AIR Northwest Pacific Basinwide Typhoon Model
+61	AIR Tropical Cyclone Model for Australia
+62	AIR Typhoon Model for Japan
+63	AIR Hurricane Model for New Zealand
+64	AIR Typhoon Model for Southeast Asia
+65	AIR Typhoon Model for China
+66	AIR Typhoon Model for South Korea
+67	AIR Tropical Cyclone Model for Central America
+68	AIR Tropical Cyclone Model for India
+70	AIR Earthquake Model for South America
+71	AIR Earthquake Model for Colombia
+72	AIR Earthquake Model for Mexico
+73	AIR Earthquake Model for Chile
+74	AIR Earthquake Model for Venezuela
+75	AIR Earthquake Model for Peru
+76	AIR Earthquake Model for Central America
+81	AIR Pandemic Flu Model
+84	AIR Cyber (ARC) Model
+85	AIR Multiple-Peril Crop Insurance Model for China
+86	AIR Crop Hail Model for the U.S. and Canada
+87	AIR Multiple-Peril Crop Insurance Model for India
+89	AIR Multiple-Peril Crop Insurance Model for Canada
+90	AIR Inland Flood Model for Central Europe
+91	AIR Coastal Flood Model for Great Britain
+92	AIR Inland Flood Model for Great Britain
+93	AIR Inland Flood Model for Germany
+94	AIR Inland Flood Model for Southeast Europe
+95	AIR Inland Flood Model for Austria, Czech and Switzerland
+521	AIR Hurricane Model for the United States
