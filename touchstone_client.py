@@ -8,7 +8,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from api_client import send_soap_request
 from config import BUSINESS_UNIT_SID, SQL_INSTANCE_SID
-from peril_lookup import enrich_with_peril, get_unique_perils
+from model_lookup import enrich_with_model, get_unique_models
+from audit_log import audited_call, log_api_call
 from soap_templates import (
     get_detailed_loss_analyses,
     get_loss_analysis_event_results,
@@ -60,6 +61,7 @@ def get_analysis_sids():
     return results
 
 
+@audited_call("GetAllLossData")
 def get_all_loss_data(analysis_sid):
     """Fetches ELT, EP Curves, Loss Summary for a given AnalysisSid"""
 
@@ -82,7 +84,7 @@ def get_all_loss_data(analysis_sid):
     try:
         r = send_soap_request(get_loss_analysis_event_results(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, analysis_sid))
         df_elt = _parse(r.text, 'EventLoss') if r.status_code == 200 else pd.DataFrame()
-        results['ELT'] = enrich_with_peril(df_elt)
+        results['ELT'] = enrich_with_model(df_elt)
         print(f"    ELT columns: {list(results['ELT'].columns[:5])}")
     except Exception as e:
         print(f"    ELT error: {e}")
@@ -90,19 +92,22 @@ def get_all_loss_data(analysis_sid):
 
     try:
         r = send_soap_request(get_loss_analysis_annual_results(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, analysis_sid))
-        results['EP Curves'] = _parse(r.text, 'AnnualEPData') if r.status_code == 200 else pd.DataFrame()
+        df_ep = _parse(r.text, 'AnnualEPData') if r.status_code == 200 else pd.DataFrame()
+        results['EP Curves'] = enrich_with_model(df_ep)
     except:
         results['EP Curves'] = pd.DataFrame()
 
     try:
         r = send_soap_request(get_loss_analysis_summary_results(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, analysis_sid))
-        results['Loss Summary'] = _parse(r.text, 'SummaryEPDistribution') if r.status_code == 200 else pd.DataFrame()
+        df_summary = _parse(r.text, 'SummaryEPDistribution') if r.status_code == 200 else pd.DataFrame()
+        results['Loss Summary'] = enrich_with_model(df_summary)
     except:
         results['Loss Summary'] = pd.DataFrame()
 
     return results
 
 
+@audited_call("GetHazardResults")
 def get_hazard_results(analysis_sid):
     """
     Fetches ALL paginated hazard analysis results for a given AnalysisSid.
