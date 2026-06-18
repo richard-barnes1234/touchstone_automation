@@ -110,11 +110,20 @@ def build_sor_report(meta, df_elt):
         ws.cell(row=r, column=19, value=f"=_xlfn.MAXIFS(D:D,$G:$G,$O{r})")                                               # S: GRLoss
 
     # ── EP / AAL / SD summary table (rows 4-5) ─────────────────────────────────
+    # Return period = 10000/rank, so:
+    #   100yr  = 100th largest  (rank 100  out of 10000)
+    #   250yr  = 40th largest   (rank 40   out of 10000)
+    #   500yr  = 20th largest   (rank 20   out of 10000)
+    #   1000yr = 10th largest   (rank 10   out of 10000)
     ws["U4"] = "Ground Up"
     ws["U5"] = "Gross"
-    for rp_col, rp_letter in zip((100, 250, 500, 1000), ("V", "W", "X", "Y")):
-        ws[f"{rp_letter}4"] = f"=IFERROR(VLOOKUP({rp_letter}$3,$P$3:$Q${last_occ_row},2,FALSE),0)"   # Ground Up RP lookup
-        ws[f"{rp_letter}5"] = f"=IFERROR(VLOOKUP({rp_letter}$3,$R$3:$S${last_occ_row},2,FALSE),0)"   # Gross RP lookup
+
+    rp_ranks = {100: 100, 250: 40, 500: 20, 1000: 10}
+    for rp_val, rp_letter in zip((100, 250, 500, 1000), ("V", "W", "X", "Y")):
+        rank = rp_ranks[rp_val]
+        ws[f"{rp_letter}4"] = f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)"   # Ground Up
+        ws[f"{rp_letter}5"] = f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)"   # Gross
+
     ws["Z4"] = f"=SUM($J$4:$J${last_occ_row})/{N_YEARS}"
     ws["AA4"] = f"=SQRT(SUM($K$4:$K${last_occ_row})/{N_YEARS - 1})"
     ws["Z5"] = f"=SUM($L$4:$L${last_occ_row})/{N_YEARS}"
@@ -128,13 +137,16 @@ def build_sor_report(meta, df_elt):
     ws["X7"] = "Max Affected States"
     _style_header(ws, 7, 21, 24, fill="2E5B9A")
 
-    # Rows 8-12: top 5 return period levels, exactly matching the sample
+    # Rows 8-12: top 5 return period levels using LARGE for robust RP calculation
+    # Loss Exceedance = return period = 10000/rank
+    # 10000yr = rank 1, 5000yr = rank 2, 3333yr = rank 3, 2500yr = rank 4, 2000yr = rank 5
     top5_levels = [10000, 5000, 10000/3, 2500, 2000]
-    for i, level in enumerate(top5_levels):
+    top5_ranks  = [1, 2, 3, 4, 5]
+    for i, (level, rank) in enumerate(zip(top5_levels, top5_ranks)):
         r = 8 + i
         ws.cell(row=r, column=21, value=level)                                                                    # U: Loss Exceedance
-        ws.cell(row=r, column=22, value=f"=IFERROR(VLOOKUP($U{r},$P$3:$Q${last_occ_row},2,FALSE),0)")            # V: Ground Up
-        ws.cell(row=r, column=23, value=f"=IFERROR(VLOOKUP($U{r},$R$3:$S${last_occ_row},2,FALSE),0)")            # W: Gross
+        ws.cell(row=r, column=22, value=f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)")                      # V: Ground Up
+        ws.cell(row=r, column=23, value=f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)")                      # W: Gross
         ws.cell(row=r, column=24, value=f'=_xlfn.XLOOKUP(V{r},E:E,B:B,"")')                                      # X: EventDescription
 
     # Style Top 5 data rows
