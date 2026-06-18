@@ -120,7 +120,33 @@ def build_sor_report(meta, df_elt):
     ws["Z5"] = f"=SUM($L$4:$L${last_occ_row})/{N_YEARS}"
     ws["AA5"] = f"=SQRT(SUM($M$4:$M${last_occ_row})/{N_YEARS - 1})"
 
-    # ── Column widths ──────────────────────────────────────────────────────────
+    # ── Top 5 Events table (rows 7-12) ────────────────────────────────────────
+    # Row 7: headers
+    ws["U7"] = "Loss Exceedance"
+    ws["V7"] = "Ground Up"
+    ws["W7"] = "Gross"
+    ws["X7"] = "Max Affected States"
+    _style_header(ws, 7, 21, 24, fill="2E5B9A")
+
+    # Rows 8-12: top 5 return period levels, exactly matching the sample
+    top5_levels = [10000, 5000, 10000/3, 2500, 2000]
+    for i, level in enumerate(top5_levels):
+        r = 8 + i
+        ws.cell(row=r, column=21, value=level)                                                                    # U: Loss Exceedance
+        ws.cell(row=r, column=22, value=f"=IFERROR(VLOOKUP($U{r},$P$3:$Q${last_occ_row},2,FALSE),0)")            # V: Ground Up
+        ws.cell(row=r, column=23, value=f"=IFERROR(VLOOKUP($U{r},$R$3:$S${last_occ_row},2,FALSE),0)")            # W: Gross
+        ws.cell(row=r, column=24, value=f'=_xlfn.XLOOKUP(V{r},E:E,B:B,"")')                                      # X: EventDescription
+
+    # Style Top 5 data rows
+    from openpyxl.styles import numbers
+    thin = Border(*(Side(style="thin", color="D1D5DB"),) * 4)
+    for r in range(8, 13):
+        for c in range(21, 25):
+            cell = ws.cell(row=r, column=c)
+            cell.border = thin
+            cell.font = Font(name="Calibri", size=9)
+        ws.cell(row=r, column=21).alignment = Alignment(horizontal="right")
+    ws.column_dimensions["X"].width = 80   # EventDescription needs extra width
     widths = {"A": 14, "B": 50, "C": 10, "D": 14, "E": 14, "F": 10, "G": 9,
               "I": 8, "J": 14, "K": 16, "L": 14, "M": 16,
               "O": 8, "P": 12, "Q": 14, "R": 12, "S": 14,
