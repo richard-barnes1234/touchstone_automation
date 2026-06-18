@@ -6,6 +6,7 @@ from flask import Flask, jsonify, request, send_file, render_template_string
 import urllib3
 import pandas as pd
 from model_lookup import get_model_description, get_unique_models
+from sor_report_builder import build_sor_report
 from io import BytesIO
 from datetime import datetime
 from openpyxl import Workbook
@@ -164,13 +165,22 @@ def api_download():
         raw_datasets  = body.get("datasets", {})
         analysis_type = meta.get("analysis_type", "LOSS")
 
-        datasets = {}
-        for name, payload in raw_datasets.items():
-            if payload and payload.get("columns"):
-                df = pd.DataFrame(payload["rows"], columns=payload["columns"])
-                datasets[name] = df
-
-        excel_file = build_excel(meta, datasets)
+        if analysis_type == "LOSS":
+            # SOR report needs the FULL unfiltered ELT — re-fetch fresh rather
+            # than relying on the column-filtered payload sent from the frontend
+            # column selector (which is built for preview/export of other formats).
+            from touchstone_client import get_all_loss_data
+            analysis_sid = meta.get("analysis_sid")
+            results = get_all_loss_data(int(analysis_sid))
+            df_elt  = results.get("ELT", pd.DataFrame())
+            excel_file = build_sor_report(meta, df_elt)
+        else:
+            datasets = {}
+            for name, payload in raw_datasets.items():
+                if payload and payload.get("columns"):
+                    df = pd.DataFrame(payload["rows"], columns=payload["columns"])
+                    datasets[name] = df
+            excel_file = build_excel(meta, datasets)
 
         # Use custom filename if provided, else generate one
         custom = meta.get("custom_filename", "").strip()
