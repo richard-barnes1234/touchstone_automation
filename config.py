@@ -10,11 +10,9 @@
 
 import os
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+# python-dotenv removed — not required.
+# Environment variables are set directly in the shell (local) or
+# Azure App Service Application Settings (production).
 
 
 # ── Determine environment ─────────────────────────────────────────────────────
@@ -49,7 +47,7 @@ _CREDENTIAL_MAP = {
     "uat":  {
         "username_var": "TOUCHSTONE_UAT_USERNAME",
         "password_var": "TOUCHSTONE_UAT_PASSWORD",
-        "account_name": "automationservice",
+        "account_name": "automationservice",   # existing account repurposed
     },
     "prod": {
         "username_var": "TOUCHSTONE_PROD_USERNAME",
