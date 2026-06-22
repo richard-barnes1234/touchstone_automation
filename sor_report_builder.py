@@ -40,12 +40,15 @@ def build_sor_report(meta, df_elt):
 
     Returns a BytesIO containing the .xlsx file.
     """
-    # ── Use all rows as returned by the API ────────────────────────────────────
-    # CatalogTypeCode varies by peril/model (e.g. STC for severe storm, RDS for
-    # other perils) — it is NOT a fixed filter. The analysis is already scoped
-    # to one peril/model by the AnalysisSid itself, so no additional filtering
-    # is needed here.
-    df = df_elt.copy() if not df_elt.empty else df_elt
+    # ── Filter to STC (Stochastic Catalog) only ───────────────────────────────
+    # STC is the full 10,000-year probabilistic catalog required for meaningful
+    # EP curve calculations. RDS/HIS/DET rows are excluded — they represent
+    # deterministic reference scenarios, not the stochastic simulation needed
+    # for AAL, SD and return period losses.
+    if not df_elt.empty and 'CatalogTypeCode' in df_elt.columns:
+        df = df_elt[df_elt['CatalogTypeCode'] == 'STC'].copy()
+    else:
+        df = df_elt.copy() if not df_elt.empty else df_elt
 
     # API returns numeric fields as strings — coerce for SUMIFS/MAXIFS to work
     if not df.empty:
@@ -72,7 +75,7 @@ def build_sor_report(meta, df_elt):
     ws["I1"] = "AGG"
     ws["O1"] = "OCC"
     if df.empty:
-        ws["U1"] = "No STC events found for this analysis"
+        ws["U1"] = "No STC events — analysis may use RDS/HIS catalog only"
     else:
         ws["U1"] = "=VLOOKUP($F4,ModelCodeRef!$A$3:$E$26,5)"   # analysis label, matches sample exactly
     for cell in ("I1", "O1"):
