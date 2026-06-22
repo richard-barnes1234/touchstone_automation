@@ -182,13 +182,16 @@ def api_download():
                     datasets[name] = df
             excel_file = build_excel(meta, datasets)
 
-        # Use custom filename if provided, else generate one
+        # Filename: ProjectName SID: AnalysisSid
+        # e.g. "Providence_26 SID: 141190.xlsx"
+        # Use custom filename if provided, otherwise use project + SID pattern
         custom = meta.get("custom_filename", "").strip()
         if custom:
             filename = custom if custom.endswith(".xlsx") else custom + ".xlsx"
         else:
-            safe = "".join(c for c in meta.get("analysis_name","report") if c.isalnum() or c in " _-")[:40].strip()
-            filename = f"Touchstone_{analysis_type}_{safe}_{meta.get('analysis_sid','')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            project = "".join(c for c in meta.get("project_name", "Report") if c.isalnum() or c in " _-").strip()
+            sid     = meta.get("analysis_sid", "")
+            filename = f"{project} SID: {sid}.xlsx"
 
         return send_file(
             excel_file,
