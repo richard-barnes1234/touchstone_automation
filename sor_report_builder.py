@@ -40,14 +40,29 @@ def build_sor_report(meta, df_elt):
 
     Returns a BytesIO containing the .xlsx file.
     """
-    # ── Filter to STC only ────────────────────────────────────────────────────
-    df = df_elt[df_elt["CatalogTypeCode"] == "STC"].copy() if not df_elt.empty else df_elt
+    # ── Use all rows as returned by the API ────────────────────────────────────
+    # CatalogTypeCode varies by peril/model (e.g. STC for severe storm, RDS for
+    # other perils) — it is NOT a fixed filter. The analysis is already scoped
+    # to one peril/model by the AnalysisSid itself, so no additional filtering
+    # is needed here.
+    df = df_elt.copy() if not df_elt.empty else df_elt
 
     # API returns numeric fields as strings — coerce for SUMIFS/MAXIFS to work
     if not df.empty:
         for col in ("EventID", "GrossLoss", "GroundUpLoss", "ModelCode", "YearID"):
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # Diagnostic — helps confirm data shape before building report
+    if not df.empty:
+        unique_years = df["YearID"].nunique() if "YearID" in df.columns else 0
+        print(f"  [SOR] Events: {len(df):,} | Unique years with events: {unique_years:,} of {N_YEARS:,}")
+        if unique_years < 100:
+            print(f"  [SOR] WARNING: Only {unique_years} years have events — "
+                  f"100/250/500/1000yr RP values may not appear in column P. "
+                  f"VLOOKUP will return 0 via IFERROR for missing RPs.")
+    else:
+        print("  [SOR] WARNING: No event data — all tables will show 0")
 
     wb = Workbook()
     ws = wb.active
@@ -90,13 +105,15 @@ def build_sor_report(meta, df_elt):
 
     # ── AGG table — one row per simulation year (1..10000) ────────────────────
     # I=Year J=GULoss K=GUStdDevSq L=GRLoss M=GRStdDevSq
+    # CRITICAL: SUMIFS uses $O (OCC Year column) as the year reference — matches
+    # original sample exactly. AGG and OCC share the same Year sequence.
     for i, year in enumerate(range(1, N_YEARS + 1)):
         r = 4 + i
-        ws.cell(row=r, column=9,  value=1 if year == 1 else f"=I{r-1}+1")            # I: Year
-        ws.cell(row=r, column=10, value=f"=SUMIFS($E:$E,$G:$G,$I{r})")               # J: GULoss
-        ws.cell(row=r, column=11, value=f"=(J{r}-$Z$4)^2")                            # K: GUStdDevSq
-        ws.cell(row=r, column=12, value=f"=SUMIFS($D:$D,$G:$G,$I{r})")               # L: GRLoss
-        ws.cell(row=r, column=13, value=f"=(L{r}-$Z$5)^2")                            # M: GRStdDevSq
+        ws.cell(row=r, column=9,  value=1 if year == 1 else f"=I{r-1}+1")           # I: Year
+        ws.cell(row=r, column=10, value=f"=SUMIFS($E:$E,$G:$G,$O{r})")              # J: GULoss (uses O not I)
+        ws.cell(row=r, column=11, value=f"=(J{r}-$Z$4)^2")                           # K: GUStdDevSq vs AAL GU
+        ws.cell(row=r, column=12, value=f"=SUMIFS($D:$D,$G:$G,$O{r})")              # L: GRLoss (uses O not I)
+        ws.cell(row=r, column=13, value=f"=(L{r}-$Z$5)^2")                           # M: GRStdDevSq vs AAL Gross
 
     # ── OCC table — one row per simulation year, MAX event in year ────────────
     # O=Year P=GURP Q=GULoss R=GRRP S=GRLoss
@@ -110,24 +127,35 @@ def build_sor_report(meta, df_elt):
         ws.cell(row=r, column=19, value=f"=_xlfn.MAXIFS(D:D,$G:$G,$O{r})")                                               # S: GRLoss
 
     # ── EP / AAL / SD summary table (rows 4-5) ─────────────────────────────────
-    # Return period = 10000/rank, so:
-    #   100yr  = 100th largest  (rank 100  out of 10000)
-    #   250yr  = 40th largest   (rank 40   out of 10000)
-    #   500yr  = 20th largest   (rank 20   out of 10000)
-    #   1000yr = 10th largest   (rank 10   out of 10000)
+    # Exact replica of original sample formulas:
+    # V4: =VLOOKUP(V$3,$P$3:$Q$10003,2,FALSE) — Ground Up RP lookup from OCC P/Q cols
+    # V5: =VLOOKUP(V$3,$R$3:$S$10003,2,FALSE) — Gross RP lookup from OCC R/S cols
+    # Z4: =SUM($J$4:$J$10003)/10000           — AAL Ground Up from AGG
+    # Z5: =SUM($L$4:$L$10003)/10000           — AAL Gross from AGG
     ws["U4"] = "Ground Up"
     ws["U5"] = "Gross"
-
-    rp_ranks = {100: 100, 250: 40, 500: 20, 1000: 10}
-    for rp_val, rp_letter in zip((100, 250, 500, 1000), ("V", "W", "X", "Y")):
-        rank = rp_ranks[rp_val]
-        ws[f"{rp_letter}4"] = f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)"   # Ground Up
-        ws[f"{rp_letter}5"] = f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)"   # Gross
-
-    ws["Z4"] = f"=SUM($J$4:$J${last_occ_row})/{N_YEARS}"
-    ws["AA4"] = f"=SQRT(SUM($K$4:$K${last_occ_row})/{N_YEARS - 1})"
-    ws["Z5"] = f"=SUM($L$4:$L${last_occ_row})/{N_YEARS}"
-    ws["AA5"] = f"=SQRT(SUM($M$4:$M${last_occ_row})/{N_YEARS - 1})"
+    # Return period ranks: 100yr=rank 100, 250yr=rank 40, 500yr=rank 20, 1000yr=rank 10
+    rp_ranks = {"V": 100, "W": 40, "X": 20, "Y": 10}
+    for rp_letter, rank in rp_ranks.items():
+        # Try VLOOKUP first (exact match like Richard's template).
+        # If VLOOKUP returns 0 or N/A (sparse data — RP not in P column),
+        # fall back to LARGE which always works regardless of data density.
+        ws[f"{rp_letter}4"] = (
+            f"=IFERROR(IF(VLOOKUP({rp_letter}$3,$P$3:$Q${last_occ_row},2,FALSE)>0,"
+            f"VLOOKUP({rp_letter}$3,$P$3:$Q${last_occ_row},2,FALSE),"
+            f"LARGE($Q$4:$Q${last_occ_row},{rank})),"
+            f"LARGE($Q$4:$Q${last_occ_row},{rank}))"
+        )
+        ws[f"{rp_letter}5"] = (
+            f"=IFERROR(IF(VLOOKUP({rp_letter}$3,$R$3:$S${last_occ_row},2,FALSE)>0,"
+            f"VLOOKUP({rp_letter}$3,$R$3:$S${last_occ_row},2,FALSE),"
+            f"LARGE($S$4:$S${last_occ_row},{rank})),"
+            f"LARGE($S$4:$S${last_occ_row},{rank}))"
+        )
+    ws["Z4"]  = f"=SUM($J$4:$J${last_occ_row})/{N_YEARS}"
+    ws["AA4"] = f"=SQRT(SUM($K$4:$K${last_occ_row})/({N_YEARS}-1))"
+    ws["Z5"]  = f"=SUM($L$4:$L${last_occ_row})/{N_YEARS}"
+    ws["AA5"] = f"=SQRT(SUM($M$4:$M${last_occ_row})/({N_YEARS}-1))"
 
     # ── Top 5 Events table (rows 7-12) ────────────────────────────────────────
     # Row 7: headers
@@ -144,10 +172,22 @@ def build_sor_report(meta, df_elt):
     top5_ranks  = [1, 2, 3, 4, 5]
     for i, (level, rank) in enumerate(zip(top5_levels, top5_ranks)):
         r = 8 + i
-        ws.cell(row=r, column=21, value=level)                                                                    # U: Loss Exceedance
-        ws.cell(row=r, column=22, value=f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)")                      # V: Ground Up
-        ws.cell(row=r, column=23, value=f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)")                      # W: Gross
-        ws.cell(row=r, column=24, value=f'=_xlfn.XLOOKUP(V{r},E:E,B:B,"")')                                      # X: EventDescription
+        ws.cell(row=r, column=21, value=level)
+        # Ground Up — VLOOKUP with LARGE fallback
+        ws.cell(row=r, column=22, value=(
+            f"=IFERROR(IF(VLOOKUP($U{r},$P$3:$Q${last_occ_row},2,FALSE)>0,"
+            f"VLOOKUP($U{r},$P$3:$Q${last_occ_row},2,FALSE),"
+            f"LARGE($Q$4:$Q${last_occ_row},{rank})),"
+            f"LARGE($Q$4:$Q${last_occ_row},{rank}))"
+        ))
+        # Gross — same pattern
+        ws.cell(row=r, column=23, value=(
+            f"=IFERROR(IF(VLOOKUP($U{r},$R$3:$S${last_occ_row},2,FALSE)>0,"
+            f"VLOOKUP($U{r},$R$3:$S${last_occ_row},2,FALSE),"
+            f"LARGE($S$4:$S${last_occ_row},{rank})),"
+            f"LARGE($S$4:$S${last_occ_row},{rank}))"
+        ))
+        ws.cell(row=r, column=24, value=f'=_xlfn.XLOOKUP(V{r},E:E,B:B,"")')
 
     # Style Top 5 data rows
     from openpyxl.styles import numbers
