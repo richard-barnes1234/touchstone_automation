@@ -115,16 +115,28 @@ def api_haz_analyses(project_sid):
 def api_loss_results(analysis_sid):
     try:
         from touchstone_client import get_all_loss_data
-        results = get_all_loss_data(int(analysis_sid))
-        data = {}
+        results     = get_all_loss_data(int(analysis_sid))
+        data        = {}
+        models      = []
+        model_label = ""
         for k, df in results.items():
             if not df.empty:
+                df = df.replace([float('inf'), float('-inf')], None)
+                df = df.where(pd.notnull(df), None)
+                rows = []
+                for row in df.values.tolist():
+                    clean = [None if (v != v or v is None) else v for v in row]
+                    rows.append(clean)
                 data[k] = {
                     "columns": list(df.columns),
-                    "rows":    df.values.tolist(),
+                    "rows":    rows,
                     "count":   len(df)
                 }
-        return jsonify({"ok": True, "data": data})
+                if k == 'ELT' and 'ModelCode' in df.columns:
+                    models      = get_unique_models(df)
+                    first_code  = df['ModelCode'].dropna().iloc[0] if not df['ModelCode'].dropna().empty else None
+                    model_label = get_model_description(first_code) if first_code else ""
+        return jsonify({"ok": True, "data": data, "models": models, "model_label": model_label})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
