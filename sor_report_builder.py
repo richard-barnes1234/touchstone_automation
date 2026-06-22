@@ -117,22 +117,22 @@ def build_sor_report(meta, df_elt):
     # original sample exactly. AGG and OCC share the same Year sequence.
     for i, year in enumerate(range(1, N_YEARS + 1)):
         r = 4 + i
-        ws.cell(row=r, column=9,  value=1 if year == 1 else f"=I{r-1}+1")           # I: Year
-        ws.cell(row=r, column=10, value=f"=SUMIFS($E:$E,$G:$G,$O{r})")              # J: GULoss (uses O not I)
-        ws.cell(row=r, column=11, value=f"=(J{r}-$Z$4)^2")                           # K: GUStdDevSq vs AAL GU
-        ws.cell(row=r, column=12, value=f"=SUMIFS($D:$D,$G:$G,$O{r})")              # L: GRLoss (uses O not I)
-        ws.cell(row=r, column=13, value=f"=(L{r}-$Z$5)^2")                           # M: GRStdDevSq vs AAL Gross
+        ws.cell(row=r, column=9,  value=year)                                                                     # I: Year (static int)
+        ws.cell(row=r, column=10, value=f"=SUMIFS($E:$E,$G:$G,$O{r})")                                           # J: GULoss
+        ws.cell(row=r, column=11, value=f"=(J{r}-$Z$4)^2")                                                       # K: GUStdDevSq
+        ws.cell(row=r, column=12, value=f"=SUMIFS($D:$D,$G:$G,$O{r})")                                           # L: GRLoss
+        ws.cell(row=r, column=13, value=f"=(L{r}-$Z$5)^2")                                                       # M: GRStdDevSq
 
     # ── OCC table — one row per simulation year, MAX event in year ────────────
     # O=Year P=GURP Q=GULoss R=GRRP S=GRLoss
     last_occ_row = 3 + N_YEARS
     for i, year in enumerate(range(1, N_YEARS + 1)):
         r = 4 + i
-        ws.cell(row=r, column=15, value=1 if year == 1 else f"=O{r-1}+1")                                                # O: Year
-        ws.cell(row=r, column=16, value=f"=1/(_xlfn.RANK.EQ(Q{r},$Q$4:$Q${last_occ_row},0)/{N_YEARS})")                  # P: GURP
-        ws.cell(row=r, column=17, value=f"=_xlfn.MAXIFS($E:$E,$G:$G,$O{r})")                                             # Q: GULoss
-        ws.cell(row=r, column=18, value=f"=1/(_xlfn.RANK.EQ(S{r},$S$4:$S${last_occ_row},0)/{N_YEARS})")                  # R: GRRP
-        ws.cell(row=r, column=19, value=f"=_xlfn.MAXIFS(D:D,$G:$G,$O{r})")                                               # S: GRLoss
+        ws.cell(row=r, column=15, value=year)                                                                      # O: Year (static int)
+        ws.cell(row=r, column=16, value=f"=1/(_xlfn.RANK.EQ(Q{r},$Q$4:$Q${last_occ_row},0)/{N_YEARS})")          # P: GURP
+        ws.cell(row=r, column=17, value=f"=_xlfn.MAXIFS($E:$E,$G:$G,$O{r})")                                     # Q: GULoss
+        ws.cell(row=r, column=18, value=f"=1/(_xlfn.RANK.EQ(S{r},$S$4:$S${last_occ_row},0)/{N_YEARS})")          # R: GRRP
+        ws.cell(row=r, column=19, value=f"=_xlfn.MAXIFS(D:D,$G:$G,$O{r})")                                       # S: GRLoss
 
     # ── EP / AAL / SD summary table (rows 4-5) ─────────────────────────────────
     # Exact replica of original sample formulas:
