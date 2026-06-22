@@ -95,10 +95,18 @@ def build_sor_report(meta, df_elt):
     _style_header(ws, 3, 21, 27)  # EP summary headers
 
     # ── Raw STC event rows (columns A-G) ───────────────────────────────────────
-    raw_cols = ["CatalogTypeCode", "EventDescription", "EventID", "GrossLoss", "GroundUpLoss", "ModelCode", "YearID"]
+    raw_cols  = ["CatalogTypeCode", "EventDescription", "EventID", "GrossLoss", "GroundUpLoss", "ModelCode", "YearID"]
+    int_cols  = {"EventID", "ModelCode", "YearID"}
+    float_cols = {"GrossLoss", "GroundUpLoss"}
     if not df.empty:
         for r_idx, row in enumerate(df[raw_cols].itertuples(index=False), start=4):
-            for c_idx, val in enumerate(row, start=1):
+            for c_idx, (col_name, val) in enumerate(zip(raw_cols, row), start=1):
+                if col_name in int_cols:
+                    try: val = int(float(val))
+                    except (ValueError, TypeError): pass
+                elif col_name in float_cols:
+                    try: val = float(val)
+                    except (ValueError, TypeError): pass
                 ws.cell(row=r_idx, column=c_idx, value=val)
 
     last_event_row = max(4, 3 + len(df))
