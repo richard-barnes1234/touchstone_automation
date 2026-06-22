@@ -2203,12 +2203,14 @@
         if (j.model_label) {
           document.getElementById('chip-name').textContent = state.selected.name;
         }
-        
+
         document.getElementById('btn-download').style.display = 'inline-flex';
         document.getElementById('filename-row').style.display = 'flex';
         // Pre-fill filename with analysis name
-        const defaultName = `${state.selected?.projectName || ''} SID: ${state.selected?.sid || ''}`;
-        document.getElementById('custom-filename').value = defaultName;
+
+        const proj = state.selected?.projectName || '';
+        const sid = state.selected?.sid || '';
+        document.getElementById('custom-filename').value = `${proj} SID: ${sid}`;
       } catch (e) {
         document.getElementById('results-alert').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
       } finally { hideLoading(); }
