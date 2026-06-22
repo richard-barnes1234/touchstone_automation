@@ -134,24 +134,13 @@ def build_sor_report(meta, df_elt):
     # Z5: =SUM($L$4:$L$10003)/10000           — AAL Gross from AGG
     ws["U4"] = "Ground Up"
     ws["U5"] = "Gross"
-    # Return period ranks: 100yr=rank 100, 250yr=rank 40, 500yr=rank 20, 1000yr=rank 10
+    # LARGE is the most reliable approach regardless of data density or floating
+    # point precision issues with RANK.EQ-derived return period values in column P.
+    # 100yr = 100th largest, 250yr = 40th largest, 500yr = 20th largest, 1000yr = 10th largest
     rp_ranks = {"V": 100, "W": 40, "X": 20, "Y": 10}
     for rp_letter, rank in rp_ranks.items():
-        # Try VLOOKUP first (exact match like Richard's template).
-        # If VLOOKUP returns 0 or N/A (sparse data — RP not in P column),
-        # fall back to LARGE which always works regardless of data density.
-        ws[f"{rp_letter}4"] = (
-            f"=IFERROR(IF(VLOOKUP({rp_letter}$3,$P$3:$Q${last_occ_row},2,FALSE)>0,"
-            f"VLOOKUP({rp_letter}$3,$P$3:$Q${last_occ_row},2,FALSE),"
-            f"LARGE($Q$4:$Q${last_occ_row},{rank})),"
-            f"LARGE($Q$4:$Q${last_occ_row},{rank}))"
-        )
-        ws[f"{rp_letter}5"] = (
-            f"=IFERROR(IF(VLOOKUP({rp_letter}$3,$R$3:$S${last_occ_row},2,FALSE)>0,"
-            f"VLOOKUP({rp_letter}$3,$R$3:$S${last_occ_row},2,FALSE),"
-            f"LARGE($S$4:$S${last_occ_row},{rank})),"
-            f"LARGE($S$4:$S${last_occ_row},{rank}))"
-        )
+        ws[f"{rp_letter}4"] = f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)"
+        ws[f"{rp_letter}5"] = f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)"
     ws["Z4"]  = f"=SUM($J$4:$J${last_occ_row})/{N_YEARS}"
     ws["AA4"] = f"=SQRT(SUM($K$4:$K${last_occ_row})/({N_YEARS}-1))"
     ws["Z5"]  = f"=SUM($L$4:$L${last_occ_row})/{N_YEARS}"
@@ -173,20 +162,8 @@ def build_sor_report(meta, df_elt):
     for i, (level, rank) in enumerate(zip(top5_levels, top5_ranks)):
         r = 8 + i
         ws.cell(row=r, column=21, value=level)
-        # Ground Up — VLOOKUP with LARGE fallback
-        ws.cell(row=r, column=22, value=(
-            f"=IFERROR(IF(VLOOKUP($U{r},$P$3:$Q${last_occ_row},2,FALSE)>0,"
-            f"VLOOKUP($U{r},$P$3:$Q${last_occ_row},2,FALSE),"
-            f"LARGE($Q$4:$Q${last_occ_row},{rank})),"
-            f"LARGE($Q$4:$Q${last_occ_row},{rank}))"
-        ))
-        # Gross — same pattern
-        ws.cell(row=r, column=23, value=(
-            f"=IFERROR(IF(VLOOKUP($U{r},$R$3:$S${last_occ_row},2,FALSE)>0,"
-            f"VLOOKUP($U{r},$R$3:$S${last_occ_row},2,FALSE),"
-            f"LARGE($S$4:$S${last_occ_row},{rank})),"
-            f"LARGE($S$4:$S${last_occ_row},{rank}))"
-        ))
+        ws.cell(row=r, column=22, value=f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)")
+        ws.cell(row=r, column=23, value=f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)")
         ws.cell(row=r, column=24, value=f'=_xlfn.XLOOKUP(V{r},E:E,B:B,"")')
 
     # Style Top 5 data rows
