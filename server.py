@@ -135,7 +135,8 @@ def api_haz_results(analysis_sid):
         from touchstone_client import get_hazard_results
         results = get_hazard_results(int(analysis_sid))
         data = {}
-        models = []
+        models      = []
+        model_label = ""
         for k, df in results.items():
             if not df.empty:
                 df = df.replace([float('inf'), float('-inf')], None)
@@ -149,10 +150,12 @@ def api_haz_results(analysis_sid):
                     "rows":    rows,
                     "count":   len(df)
                 }
-                # Collect unique models from ELT
-                if k == 'ELT':
-                    models = get_unique_models(df)
-        return jsonify({"ok": True, "data": data, "models": models})
+                # Get model label from first ModelCode in ELT
+                if k == 'ELT' and 'ModelCode' in df.columns:
+                    models      = get_unique_models(df)
+                    first_code  = df['ModelCode'].dropna().iloc[0] if not df['ModelCode'].dropna().empty else None
+                    model_label = get_model_description(first_code) if first_code else ""
+        return jsonify({"ok": True, "data": data, "models": models, "model_label": model_label})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
@@ -202,6 +205,59 @@ def api_download():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
+
+
+
+@app.route("/api/download/combined", methods=["POST"])
+def api_download_combined():
+    try:
+        body         = request.json
+        meta         = body.get("meta", {})
+        analysis_list = body.get("analyses", [])  # [{sid, name, type}, ...]
+
+        if not analysis_list:
+            return jsonify({"ok": False, "error": "No analyses provided"}), 400
+
+        from sor_report_builder import build_combined_sor_report
+        from touchstone_client import get_all_loss_data, get_hazard_results
+
+        enriched = []
+        for idx, a in enumerate(analysis_list):
+            sid   = int(a["sid"])
+            atype = a["type"]
+            name  = a.get("name", f"{atype}-{sid}")
+
+            # Sheet name: peril label or name, max 31 chars
+            sheet_name = f"{atype}-{sid}"[:31]
+
+            if atype == "LOSS":
+                results = get_all_loss_data(sid)
+                df_elt  = results.get("ELT", pd.DataFrame())
+                enriched.append({
+                    "sid": sid, "name": name, "type": atype,
+                    "df": df_elt, "sheet_name": sheet_name
+                })
+            elif atype == "HAZ":
+                haz_data = get_hazard_results(sid)
+                enriched.append({
+                    "sid": sid, "name": name, "type": atype,
+                    "df": haz_data, "sheet_name": sheet_name
+                })
+
+        excel_file = build_combined_sor_report(meta, enriched)
+
+        custom   = meta.get("custom_filename", "").strip()
+        project  = "".join(c for c in meta.get("project_name", "Combined") if c.isalnum() or c in " _-").strip()
+        filename = f"{custom}.xlsx" if custom else f"{project} Combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+
+        return send_file(
+            excel_file,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

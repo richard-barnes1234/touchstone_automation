@@ -480,6 +480,27 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 .results-empty p { font-size: 0.875rem; text-align: center; max-width: 280px; line-height: 1.5; }
 .results-empty .empty-hint { font-size: 0.78rem; color: var(--ink-3); background: #F1F5F9; padding: 0.4rem 0.85rem; border-radius: 20px; }
 
+/* ── Multi-select combine ─────────────────────────────────── */
+.combine-bar {
+  display: none; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 1rem; background: #EFF6FF;
+  border: 1px solid #BFDBFE; border-radius: 8px;
+  margin-bottom: 0.75rem; flex-wrap: wrap;
+}
+.combine-bar.show { display: flex; }
+.combine-bar .combine-label { font-size: 0.8rem; font-weight: 600; color: var(--accent); flex:1; }
+.combine-filename-row { display: flex; align-items: center; gap: 0.4rem; }
+.combine-filename-row input {
+  padding: 0.35rem 0.6rem; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 0.78rem; font-family: var(--font-mono);
+  color: var(--ink); outline: none; width: 200px;
+}
+.combine-filename-row .ext { font-size: 0.75rem; color: var(--ink-3); font-family: var(--font-mono); }
+.analysis-checkbox {
+  width: 14px; height: 14px; cursor: pointer;
+  accent-color: var(--accent); flex-shrink: 0; margin-right: 4px;
+}
+
 /* ── Peril badges (reuse existing) ───────────────────────── */
 
 /* ── Peril badges ─────────────────────────────────────────── */
@@ -691,6 +712,17 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
     <div id="analyses-section" style="display:none;">
       <div class="section-label" id="analyses-label">Analyses</div>
 
+      <!-- Combine bar — appears when 2+ analyses checked -->
+      <div class="combine-bar" id="combine-bar">
+        <span class="combine-label" id="combine-label">0 analyses selected</span>
+        <div class="combine-filename-row">
+          <input type="text" id="combine-filename" placeholder="Combined report filename" />
+          <span class="ext">.xlsx</span>
+        </div>
+        <button class="btn btn-success btn-sm" onclick="downloadCombined()">⬇ Download Combined</button>
+        <button class="btn btn-secondary btn-sm" onclick="clearCombineSelection()">✕ Clear</button>
+      </div>
+
       <div class="two-col">
         <div>
           <div class="btn-row">
@@ -815,21 +847,108 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
 const state = {
-  projects:       [],
-  filtered:       [],
-  page:           0,
-  pageSize:       20,
-  lossAnalyses:   [],
-  hazAnalyses:    [],
-  lossFiltered:   [],
-  hazFiltered:    [],
-  selected:       null,   // { sid, name, type, projectName }
-  lastResults:    null,
-  reportCount:    0,
-  history:        [],
+  projects:          [],
+  filtered:          [],
+  page:              0,
+  pageSize:          20,
+  lossAnalyses:      [],
+  hazAnalyses:       [],
+  lossFiltered:      [],
+  hazFiltered:       [],
+  selected:          null,
+  lastResults:       null,
+  lastModels:        [],
+  selectedCols:      {},
+  _activeTab:        null,
+  _shownCount:       20,
+  reportCount:       0,
+  history:           [],
+  combineSelection:  [],
 };
 
 // ── Navigation ─────────────────────────────────────────────────────────────
+// ── Multi-select combine ──────────────────────────────────────────────────
+function toggleCombine(sid, name, type) {
+  const idx = state.combineSelection.findIndex(x => x.sid === sid);
+  if (idx >= 0) {
+    state.combineSelection.splice(idx, 1);
+  } else {
+    state.combineSelection.push({ sid, name, type });
+  }
+  updateCombineBar();
+  renderAnalysisList('loss');
+  renderAnalysisList('haz');
+}
+
+function updateCombineBar() {
+  const bar = document.getElementById('combine-bar');
+  const lbl = document.getElementById('combine-label');
+  const n   = state.combineSelection.length;
+  if (n >= 1) {
+    bar.classList.add('show');
+    lbl.textContent = `${n} analys${n === 1 ? 'is' : 'es'} selected`;
+    // Auto-fill filename
+    const fn = document.getElementById('combine-filename');
+    if (!fn.value) {
+      fn.value = `${state.selected?.projectName || 'Combined'} Combined`;
+    }
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+function clearCombineSelection() {
+  state.combineSelection = [];
+  updateCombineBar();
+  renderAnalysisList('loss');
+  renderAnalysisList('haz');
+}
+
+async function downloadCombined() {
+  if (!state.combineSelection.length) return;
+  showLoading('Building combined report...');
+  try {
+    const body = {
+      meta: {
+        project_name:    state.selected?.projectName || 'Combined',
+        custom_filename: document.getElementById('combine-filename').value.trim(),
+      },
+      analyses: state.combineSelection.map(a => ({
+        sid:  a.sid,
+        name: a.name,
+        type: a.type,
+      }))
+    };
+    const r = await fetch('/api/download/combined', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error('Download failed — ' + r.statusText);
+    const blob  = await r.blob();
+    const cd    = r.headers.get('Content-Disposition') || '';
+    const fname = cd.match(/filename="?([^"]+)"?/)?.[1] || 'Combined_Report.xlsx';
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href = url; a.download = fname; a.click();
+    URL.revokeObjectURL(url);
+    state.reportCount++;
+    document.getElementById('stat-reports').textContent = state.reportCount;
+    state.history.unshift({
+      time:    new Date().toLocaleString(),
+      project: state.selected?.projectName || 'Combined',
+      sid:     state.combineSelection.map(x => x.sid).join(', '),
+      name:    'Combined Report',
+      type:    'COMBINED',
+      sheets:  state.combineSelection.map(x => `${x.type}-${x.sid}`).join(', '),
+      file:    fname
+    });
+    clearCombineSelection();
+  } catch(e) {
+    alert('Download failed: ' + e.message);
+  } finally { hideLoading(); }
+}
+
 function navigate(pg) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -989,8 +1108,8 @@ function filterHaz() {
 }
 
 function renderAnalysisList(type) {
-  const arr  = type === 'loss' ? state.lossFiltered : state.hazFiltered;
-  const el   = document.getElementById(type + '-list');
+  const arr   = type === 'loss' ? state.lossFiltered : state.hazFiltered;
+  const el    = document.getElementById(type + '-list');
   const shown = arr.slice(0, 20);
 
   if (!shown.length) {
@@ -998,20 +1117,30 @@ function renderAnalysisList(type) {
     return;
   }
 
-  el.innerHTML = shown.map(a => `
-    <div class="row-item" onclick="selectAnalysis('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')">
-      <div>
-        <div class="row-name">
-          <span class="tag tag-${type}" style="margin-right:6px;">${type.toUpperCase()}</span>
-          ${escHtml(a.AnalysisName)}
+  el.innerHTML = shown.map(a => {
+    const isChecked = state.combineSelection.some(x => x.sid === a.AnalysisSid);
+    return `
+    <div class="row-item ${isChecked ? 'selected' : ''}"
+         onclick="selectAnalysis('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <input type="checkbox" class="analysis-checkbox"
+               ${isChecked ? 'checked' : ''}
+               onclick="event.stopPropagation();toggleCombine('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')"
+        />
+        <div>
+          <div class="row-name">
+            <span class="tag tag-${type}" style="margin-right:6px;">${type.toUpperCase()}</span>
+            ${escHtml(a.AnalysisName)}
+          </div>
+          <div class="row-meta">SID: ${a.AnalysisSid} &nbsp;·&nbsp; ${a.Status || '—'}</div>
         </div>
-        <div class="row-meta">SID: ${a.AnalysisSid} &nbsp;·&nbsp; ${a.Status || '—'}</div>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();selectAnalysis('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')">
-        Select →
+      <button class="btn btn-secondary btn-sm"
+              onclick="event.stopPropagation();selectAnalysis('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')">
+        Open →
       </button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   if (arr.length > 20) {
     el.innerHTML += `<div class="page-info" style="padding:0.5rem 0;">Showing 20 of ${arr.length} — use search to filter</div>`;
@@ -1096,10 +1225,22 @@ async function fetchResults() {
     const j = await r.json();
     if (!j.ok) throw new Error(j.error);
 
-    state.lastResults = j.data;
-    state.lastModels  = j.models || [];
+    state.lastResults    = j.data;
+    state.lastModels     = j.models || [];
+    state.lastModelLabel = j.model_label || '';
     renderResultsData(j.data, s.type);
     renderModelBar(j.models || []);
+
+    // Enrich analysis name with model label after fetch
+    if (j.model_label) {
+      const enrichedName = `${j.model_label} — SID: ${s.sid}`;
+      state.selected.name = enrichedName;
+      document.getElementById('chip-name').textContent = enrichedName;
+      // Update filename field
+      const proj = state.selected.projectName || '';
+      document.getElementById('custom-filename').value = `${proj} SID: ${s.sid}`;
+    }
+
     document.getElementById('btn-download').style.display = 'inline-flex';
     document.getElementById('filename-row').style.display = 'flex';
     // Pre-fill filename with analysis name
