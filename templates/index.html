@@ -1229,9 +1229,9 @@ function renderResultsData(data, type) {
   // Show filename + download
   document.getElementById('filename-row').classList.add('show');
   document.getElementById('btn-download').style.display = 'inline-flex';
-  const defaultName = (state.selected?.name || 'Report').replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
-  if (!document.getElementById('custom-filename').value)
-    document.getElementById('custom-filename').value = defaultName;
+  // Pre-fill filename as "ProjectName SID: AnalysisSid"
+  const defaultName = `${state.selected?.projectName || 'Report'} SID: ${state.selected?.sid || ''}`;
+  document.getElementById('custom-filename').value = defaultName;
 }
 
 function switchDpTab(key) {
