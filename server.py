@@ -32,7 +32,8 @@ def format_sheet(ws):
     for cell in ws[1]:
         cell.font = Font(name="Calibri", bold=True, color="FFFFFF", size=10)
         cell.fill = PatternFill("solid", fgColor="1E3A5F")
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.alignment = Alignment(
+            horizontal="center", vertical="center", wrap_text=True)
         cell.border = thin
     ws.row_dimensions[1].height = 28
     for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
@@ -43,8 +44,10 @@ def format_sheet(ws):
             cell.alignment = Alignment(horizontal="left", vertical="center")
             cell.border = thin
     for col_idx, col_cells in enumerate(ws.columns, start=1):
-        max_len = max((len(str(c.value)) for c in col_cells if c.value), default=10)
-        ws.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 4, 45)
+        max_len = max((len(str(c.value))
+                      for c in col_cells if c.value), default=10)
+        ws.column_dimensions[get_column_letter(
+            col_idx)].width = min(max_len + 4, 45)
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
 
@@ -75,7 +78,12 @@ def build_excel(meta, datasets):
 @app.route("/")
 def index():
     with open("templates/index.html", "r", encoding="utf-8") as f:
-        return f.read()
+        content = f.read()
+    response = app.make_response(content)
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+    return response
+
+#        return f.read()
 
 
 @app.route("/api/projects")
@@ -115,9 +123,9 @@ def api_haz_analyses(project_sid):
 def api_loss_results(analysis_sid):
     try:
         from touchstone_client import get_all_loss_data
-        results     = get_all_loss_data(int(analysis_sid))
-        data        = {}
-        models      = []
+        results = get_all_loss_data(int(analysis_sid))
+        data = {}
+        models = []
         model_label = ""
         for k, df in results.items():
             if not df.empty:
@@ -133,9 +141,11 @@ def api_loss_results(analysis_sid):
                     "count":   len(df)
                 }
                 if k == 'ELT' and 'ModelCode' in df.columns:
-                    models      = get_unique_models(df)
-                    first_code  = df['ModelCode'].dropna().iloc[0] if not df['ModelCode'].dropna().empty else None
-                    model_label = get_model_description(first_code) if first_code else ""
+                    models = get_unique_models(df)
+                    first_code = df['ModelCode'].dropna(
+                    ).iloc[0] if not df['ModelCode'].dropna().empty else None
+                    model_label = get_model_description(
+                        first_code) if first_code else ""
         return jsonify({"ok": True, "data": data, "models": models, "model_label": model_label})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -147,7 +157,7 @@ def api_haz_results(analysis_sid):
         from touchstone_client import get_hazard_results
         results = get_hazard_results(int(analysis_sid))
         data = {}
-        models      = []
+        models = []
         model_label = ""
         for k, df in results.items():
             if not df.empty:
@@ -164,9 +174,11 @@ def api_haz_results(analysis_sid):
                 }
                 # Get model label from first ModelCode in ELT
                 if k == 'ELT' and 'ModelCode' in df.columns:
-                    models      = get_unique_models(df)
-                    first_code  = df['ModelCode'].dropna().iloc[0] if not df['ModelCode'].dropna().empty else None
-                    model_label = get_model_description(first_code) if first_code else ""
+                    models = get_unique_models(df)
+                    first_code = df['ModelCode'].dropna(
+                    ).iloc[0] if not df['ModelCode'].dropna().empty else None
+                    model_label = get_model_description(
+                        first_code) if first_code else ""
         return jsonify({"ok": True, "data": data, "models": models, "model_label": model_label})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -175,9 +187,9 @@ def api_haz_results(analysis_sid):
 @app.route("/api/download", methods=["POST"])
 def api_download():
     try:
-        body          = request.json
-        meta          = body.get("meta", {})
-        raw_datasets  = body.get("datasets", {})
+        body = request.json
+        meta = body.get("meta", {})
+        raw_datasets = body.get("datasets", {})
         analysis_type = meta.get("analysis_type", "LOSS")
 
         if analysis_type == "LOSS":
@@ -187,13 +199,14 @@ def api_download():
             from touchstone_client import get_all_loss_data
             analysis_sid = meta.get("analysis_sid")
             results = get_all_loss_data(int(analysis_sid))
-            df_elt  = results.get("ELT", pd.DataFrame())
+            df_elt = results.get("ELT", pd.DataFrame())
             excel_file = build_sor_report(meta, df_elt)
         else:
             datasets = {}
             for name, payload in raw_datasets.items():
                 if payload and payload.get("columns"):
-                    df = pd.DataFrame(payload["rows"], columns=payload["columns"])
+                    df = pd.DataFrame(
+                        payload["rows"], columns=payload["columns"])
                     datasets[name] = df
             excel_file = build_excel(meta, datasets)
 
@@ -204,8 +217,9 @@ def api_download():
         if custom:
             filename = custom if custom.endswith(".xlsx") else custom + ".xlsx"
         else:
-            project = "".join(c for c in meta.get("project_name", "Report") if c.isalnum() or c in " _-").strip()
-            sid     = meta.get("analysis_sid", "")
+            project = "".join(c for c in meta.get(
+                "project_name", "Report") if c.isalnum() or c in " _-").strip()
+            sid = meta.get("analysis_sid", "")
             filename = f"{project} SID: {sid}.xlsx"
 
         return send_file(
@@ -218,13 +232,11 @@ def api_download():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
-
-
 @app.route("/api/download/combined", methods=["POST"])
 def api_download_combined():
     try:
-        body         = request.json
-        meta         = body.get("meta", {})
+        body = request.json
+        meta = body.get("meta", {})
         analysis_list = body.get("analyses", [])  # [{sid, name, type}, ...]
 
         if not analysis_list:
@@ -235,16 +247,16 @@ def api_download_combined():
 
         enriched = []
         for idx, a in enumerate(analysis_list):
-            sid   = int(a["sid"])
+            sid = int(a["sid"])
             atype = a["type"]
-            name  = a.get("name", f"{atype}-{sid}")
+            name = a.get("name", f"{atype}-{sid}")
 
             # Sheet name: peril label or name, max 31 chars
             sheet_name = f"{atype}-{sid}"[:31]
 
             if atype == "LOSS":
                 results = get_all_loss_data(sid)
-                df_elt  = results.get("ELT", pd.DataFrame())
+                df_elt = results.get("ELT", pd.DataFrame())
                 enriched.append({
                     "sid": sid, "name": name, "type": atype,
                     "df": df_elt, "sheet_name": sheet_name
@@ -258,8 +270,9 @@ def api_download_combined():
 
         excel_file = build_combined_sor_report(meta, enriched)
 
-        custom   = meta.get("custom_filename", "").strip()
-        project  = "".join(c for c in meta.get("project_name", "Combined") if c.isalnum() or c in " _-").strip()
+        custom = meta.get("custom_filename", "").strip()
+        project = "".join(c for c in meta.get(
+            "project_name", "Combined") if c.isalnum() or c in " _-").strip()
         filename = f"{custom}.xlsx" if custom else f"{project} Combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
 
         return send_file(
@@ -271,7 +284,8 @@ def api_download_combined():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
 
-   #lla
+   # lla
