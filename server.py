@@ -32,8 +32,7 @@ def format_sheet(ws):
     for cell in ws[1]:
         cell.font = Font(name="Calibri", bold=True, color="FFFFFF", size=10)
         cell.fill = PatternFill("solid", fgColor="1E3A5F")
-        cell.alignment = Alignment(
-            horizontal="center", vertical="center", wrap_text=True)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         cell.border = thin
     ws.row_dimensions[1].height = 28
     for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
@@ -44,10 +43,8 @@ def format_sheet(ws):
             cell.alignment = Alignment(horizontal="left", vertical="center")
             cell.border = thin
     for col_idx, col_cells in enumerate(ws.columns, start=1):
-        max_len = max((len(str(c.value))
-                      for c in col_cells if c.value), default=10)
-        ws.column_dimensions[get_column_letter(
-            col_idx)].width = min(max_len + 4, 45)
+        max_len = max((len(str(c.value)) for c in col_cells if c.value), default=10)
+        ws.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 4, 45)
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
 
@@ -78,12 +75,7 @@ def build_excel(meta, datasets):
 @app.route("/")
 def index():
     with open("templates/index.html", "r", encoding="utf-8") as f:
-        content = f.read()
-    response = app.make_response(content)
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
-    return response
-
-#        return f.read()
+        return f.read()
 
 
 @app.route("/api/projects")
@@ -108,58 +100,6 @@ def api_loss_analyses(project_sid):
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
-@app.route("/api/analyses/model-batch", methods=["POST"])
-def api_model_batch():
-    """
-    Accepts a list of analysis SIDs, fetches ELT for each (in parallel threads),
-    extracts the first ModelCode, and returns a map of {sid: model_name}.
-    Processes all SIDs in the request — caller sends batches of 10.
-    """
-    import concurrent.futures
-    try:
-        body = request.json or {}
-        sids = body.get("sids", [])
-        if not sids:
-            return jsonify({"ok": True, "data": {}})
-
-        from api_client import send_soap_request
-        from soap_templates import get_loss_analysis_event_results
-        from config import BUSINESS_UNIT_SID, SQL_INSTANCE_SID
-        import xml.etree.ElementTree as ET
-
-        def fetch_model_for_sid(sid):
-            try:
-                soap = get_loss_analysis_event_results(
-                    BUSINESS_UNIT_SID, SQL_INSTANCE_SID, sid
-                )
-                r = send_soap_request(soap)
-                if r.status_code != 200:
-                    return sid, None
-                root = ET.fromstring(r.text)
-                for elem in root.iter():
-                    tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
-                    if tag == 'EventLoss':
-                        for child in elem:
-                            ctag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
-                            if ctag == 'ModelCode' and child.text:
-                                return sid, get_model_description(int(child.text))
-                return sid, None
-            except Exception:
-                return sid, None
-
-        results = {}
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
-            futures = {ex.submit(fetch_model_for_sid, sid): sid for sid in sids}
-            for fut in concurrent.futures.as_completed(futures):
-                sid, model_name = fut.result()
-                if model_name:
-                    results[str(sid)] = model_name
-
-        return jsonify({"ok": True, "data": results})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
-
-
 @app.route("/api/analyses/haz/<project_sid>")
 def api_haz_analyses(project_sid):
     try:
@@ -176,40 +116,8 @@ def api_loss_results(analysis_sid):
     try:
         from touchstone_client import get_all_loss_data
         results = get_all_loss_data(int(analysis_sid))
-        data = {}
-        models = []
-        model_label = ""
-        for k, df in results.items():
-            if not df.empty:
-                df = df.replace([float('inf'), float('-inf')], None)
-                df = df.where(pd.notnull(df), None)
-                rows = []
-                for row in df.values.tolist():
-                    clean = [None if (v != v or v is None) else v for v in row]
-                    rows.append(clean)
-                data[k] = {
-                    "columns": list(df.columns),
-                    "rows":    rows,
-                    "count":   len(df)
-                }
-                if k == 'ELT' and 'ModelCode' in df.columns:
-                    models = get_unique_models(df)
-                    first_code = df['ModelCode'].dropna(
-                    ).iloc[0] if not df['ModelCode'].dropna().empty else None
-                    model_label = get_model_description(
-                        first_code) if first_code else ""
-        return jsonify({"ok": True, "data": data, "models": models, "model_label": model_label})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
-
-
-@app.route("/api/results/haz/<analysis_sid>")
-def api_haz_results(analysis_sid):
-    try:
-        from touchstone_client import get_hazard_results
-        results = get_hazard_results(int(analysis_sid))
-        data = {}
-        models = []
+        data        = {}
+        models      = []
         model_label = ""
         for k, df in results.items():
             if not df.empty:
@@ -226,12 +134,34 @@ def api_haz_results(analysis_sid):
                 }
                 # Get model label from first ModelCode in ELT
                 if k == 'ELT' and 'ModelCode' in df.columns:
-                    models = get_unique_models(df)
-                    first_code = df['ModelCode'].dropna(
-                    ).iloc[0] if not df['ModelCode'].dropna().empty else None
-                    model_label = get_model_description(
-                        first_code) if first_code else ""
+                    models     = get_unique_models(df)
+                    first_code = df['ModelCode'].dropna().iloc[0] if not df['ModelCode'].dropna().empty else None
+                    model_label = get_model_description(first_code) if first_code else ""
         return jsonify({"ok": True, "data": data, "models": models, "model_label": model_label})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/results/haz/<analysis_sid>")
+def api_haz_results(analysis_sid):
+    try:
+        from touchstone_client import get_hazard_results
+        results = get_hazard_results(int(analysis_sid))
+        data = {}
+        for k, df in results.items():
+            if not df.empty:
+                df = df.replace([float('inf'), float('-inf')], None)
+                df = df.where(pd.notnull(df), None)
+                rows = []
+                for row in df.values.tolist():
+                    clean = [None if (v != v or v is None) else v for v in row]
+                    rows.append(clean)
+                data[k] = {
+                    "columns": list(df.columns),
+                    "rows":    rows,
+                    "count":   len(df)
+                }
+        return jsonify({"ok": True, "data": data})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
@@ -239,9 +169,9 @@ def api_haz_results(analysis_sid):
 @app.route("/api/download", methods=["POST"])
 def api_download():
     try:
-        body = request.json
-        meta = body.get("meta", {})
-        raw_datasets = body.get("datasets", {})
+        body          = request.json
+        meta          = body.get("meta", {})
+        raw_datasets  = body.get("datasets", {})
         analysis_type = meta.get("analysis_type", "LOSS")
 
         if analysis_type == "LOSS":
@@ -251,14 +181,13 @@ def api_download():
             from touchstone_client import get_all_loss_data
             analysis_sid = meta.get("analysis_sid")
             results = get_all_loss_data(int(analysis_sid))
-            df_elt = results.get("ELT", pd.DataFrame())
+            df_elt  = results.get("ELT", pd.DataFrame())
             excel_file = build_sor_report(meta, df_elt)
         else:
             datasets = {}
             for name, payload in raw_datasets.items():
                 if payload and payload.get("columns"):
-                    df = pd.DataFrame(
-                        payload["rows"], columns=payload["columns"])
+                    df = pd.DataFrame(payload["rows"], columns=payload["columns"])
                     datasets[name] = df
             excel_file = build_excel(meta, datasets)
 
@@ -269,9 +198,8 @@ def api_download():
         if custom:
             filename = custom if custom.endswith(".xlsx") else custom + ".xlsx"
         else:
-            project = "".join(c for c in meta.get(
-                "project_name", "Report") if c.isalnum() or c in " _-").strip()
-            sid = meta.get("analysis_sid", "")
+            project = "".join(c for c in meta.get("project_name", "Report") if c.isalnum() or c in " _-").strip()
+            sid     = meta.get("analysis_sid", "")
             filename = f"{project} SID: {sid}.xlsx"
 
         return send_file(
@@ -284,11 +212,13 @@ def api_download():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+
+
 @app.route("/api/download/combined", methods=["POST"])
 def api_download_combined():
     try:
-        body = request.json
-        meta = body.get("meta", {})
+        body         = request.json
+        meta         = body.get("meta", {})
         analysis_list = body.get("analyses", [])  # [{sid, name, type}, ...]
 
         if not analysis_list:
@@ -297,24 +227,41 @@ def api_download_combined():
         from sor_report_builder import build_combined_sor_report
         from touchstone_client import get_all_loss_data, get_hazard_results
 
-        enriched = []
-        for idx, a in enumerate(analysis_list):
-            sid = int(a["sid"])
-            atype = a["type"]
-            name = a.get("name", f"{atype}-{sid}")
+        enriched      = []
+        used_names    = set()
 
-            # Sheet name: peril label or name, max 31 chars
-            sheet_name = f"{atype}-{sid}"[:31]
+        def unique_name(base):
+            base = base[:28].strip()
+            name = base
+            i = 1
+            while name in used_names:
+                name = f"{base} {i}"
+                i += 1
+            used_names.add(name)
+            return name
+
+        for idx, a in enumerate(analysis_list):
+            sid   = int(a["sid"])
+            atype = a["type"]
+            name  = a.get("name", f"{atype}-{sid}")
 
             if atype == "LOSS":
                 results = get_all_loss_data(sid)
-                df_elt = results.get("ELT", pd.DataFrame())
+                df_elt  = results.get("ELT", pd.DataFrame())
+                # Use model label as sheet name
+                model_label = ""
+                if not df_elt.empty and "ModelCode" in df_elt.columns:
+                    first_code = df_elt["ModelCode"].dropna().iloc[0] if not df_elt["ModelCode"].dropna().empty else None
+                    if first_code:
+                        model_label = get_model_description(first_code)
+                sheet_name = unique_name(model_label or name or f"LOSS-{sid}")
                 enriched.append({
                     "sid": sid, "name": name, "type": atype,
                     "df": df_elt, "sheet_name": sheet_name
                 })
             elif atype == "HAZ":
-                haz_data = get_hazard_results(sid)
+                haz_data   = get_hazard_results(sid)
+                sheet_name = unique_name(f"HAZ {sid}")
                 enriched.append({
                     "sid": sid, "name": name, "type": atype,
                     "df": haz_data, "sheet_name": sheet_name
@@ -322,9 +269,8 @@ def api_download_combined():
 
         excel_file = build_combined_sor_report(meta, enriched)
 
-        custom = meta.get("custom_filename", "").strip()
-        project = "".join(c for c in meta.get(
-            "project_name", "Combined") if c.isalnum() or c in " _-").strip()
+        custom   = meta.get("custom_filename", "").strip()
+        project  = "".join(c for c in meta.get("project_name", "Combined") if c.isalnum() or c in " _-").strip()
         filename = f"{custom}.xlsx" if custom else f"{project} Combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
 
         return send_file(
@@ -336,8 +282,5 @@ def api_download_combined():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
-
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
-
-   # lla
