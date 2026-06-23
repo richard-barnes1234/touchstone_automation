@@ -100,6 +100,56 @@ def api_loss_analyses(project_sid):
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+@app.route("/api/analyses/model-batch", methods=["POST"])
+def api_model_batch():
+    """
+    Accepts a list of analysis SIDs, fetches ELT for each (in parallel threads),
+    extracts the first ModelCode, and returns a map of {sid: model_name}.
+    """
+    import concurrent.futures
+    try:
+        body = request.json or {}
+        sids = body.get("sids", [])
+        if not sids:
+            return jsonify({"ok": True, "data": {}})
+
+        from api_client import send_soap_request
+        from soap_templates import get_loss_analysis_event_results
+        from config import BUSINESS_UNIT_SID, SQL_INSTANCE_SID
+        import xml.etree.ElementTree as ET
+
+        def fetch_model_for_sid(sid):
+            try:
+                soap = get_loss_analysis_event_results(
+                    BUSINESS_UNIT_SID, SQL_INSTANCE_SID, sid)
+                r = send_soap_request(soap)
+                if r.status_code != 200:
+                    return sid, None
+                root = ET.fromstring(r.text)
+                for elem in root.iter():
+                    tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+                    if tag == 'EventLoss':
+                        for child in elem:
+                            ctag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+                            if ctag == 'ModelCode' and child.text:
+                                return sid, get_model_description(int(child.text))
+                return sid, None
+            except Exception:
+                return sid, None
+
+        results = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
+            futures = {ex.submit(fetch_model_for_sid, sid): sid for sid in sids}
+            for fut in concurrent.futures.as_completed(futures):
+                sid, model_name = fut.result()
+                if model_name:
+                    results[str(sid)] = model_name
+
+        return jsonify({"ok": True, "data": results})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 @app.route("/api/analyses/haz/<project_sid>")
 def api_haz_analyses(project_sid):
     try:
