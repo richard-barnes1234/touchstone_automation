@@ -712,17 +712,6 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
     <div id="analyses-section" style="display:none;">
       <div class="section-label" id="analyses-label">Analyses</div>
 
-      <!-- Combine bar — appears when 2+ analyses checked -->
-      <div class="combine-bar" id="combine-bar">
-        <span class="combine-label" id="combine-label">0 analyses selected</span>
-        <div class="combine-filename-row">
-          <input type="text" id="combine-filename" placeholder="Combined report filename" />
-          <span class="ext">.xlsx</span>
-        </div>
-        <button class="btn btn-success btn-sm" onclick="downloadCombined()">⬇ Download Combined</button>
-        <button class="btn btn-secondary btn-sm" onclick="clearCombineSelection()">✕ Clear</button>
-      </div>
-
       <div class="two-col">
         <div>
           <div class="btn-row">
@@ -883,13 +872,14 @@ function toggleCombine(sid, name, type) {
 function updateCombineBar() {
   const bar = document.getElementById('combine-bar');
   const lbl = document.getElementById('combine-label');
+  if (!bar || !lbl) return;
   const n   = state.combineSelection.length;
   if (n >= 1) {
     bar.classList.add('show');
     lbl.textContent = `${n} analys${n === 1 ? 'is' : 'es'} selected`;
     // Auto-fill filename
     const fn = document.getElementById('combine-filename');
-    if (!fn.value) {
+    if (fn && !fn.value) {
       fn.value = `${state.selected?.projectName || 'Combined'} Combined`;
     }
   } else {
@@ -1069,6 +1059,8 @@ async function loadLossAnalyses() {
     state.lossFiltered = j.data;
     document.getElementById('loss-count').textContent = `${j.count} found`;
     renderAnalysisList('loss');
+    // Kick off background model name enrichment
+    enrichModelNames(j.data, 'loss');
   } catch(e) {
     document.getElementById('loss-list').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
   } finally { hideLoading(); }
@@ -1089,6 +1081,64 @@ async function loadHazAnalyses() {
   } catch(e) {
     document.getElementById('haz-list').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
   } finally { hideLoading(); }
+}
+
+// ── Background model name enrichment ──────────────────────────────────────
+// Fetches model names in batches of 10, updates cards live as each batch returns
+async function enrichModelNames(analyses, listType) {
+  const BATCH = 10;
+  const pending = analyses.filter(a => !a.ModelName);
+  if (!pending.length) return;
+
+  // Show a small loading indicator on the list
+  const countEl = document.getElementById(listType + '-count');
+  const origText = countEl ? countEl.textContent : '';
+  if (countEl) countEl.textContent = `${origText} · loading models…`;
+
+  for (let i = 0; i < pending.length; i += BATCH) {
+    const batch = pending.slice(i, i + BATCH);
+    const sids  = batch.map(a => a.AnalysisSid);
+    try {
+      const r = await fetch('/api/analyses/model-batch', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ sids })
+      });
+      const j = await r.json();
+      if (j.ok && j.data) {
+        // Back-fill model names into both the master array and filtered array
+        const arr = listType === 'loss' ? state.lossAnalyses : state.hazAnalyses;
+        const flt = listType === 'loss' ? state.lossFiltered  : state.hazFiltered;
+        for (const [sid, name] of Object.entries(j.data)) {
+          [arr, flt].forEach(list => {
+            const entry = list.find(a => String(a.AnalysisSid) === String(sid));
+            if (entry) entry.ModelName = name;
+          });
+          // Live-update the card DOM directly — no full re-render needed
+          updateCardModelName(sid, name);
+        }
+      }
+    } catch (_) { /* silent — model names are best-effort */ }
+    // Small delay between batches to avoid hammering the API
+    if (i + BATCH < pending.length) await new Promise(res => setTimeout(res, 200));
+  }
+
+  if (countEl) countEl.textContent = origText;
+}
+
+function updateCardModelName(sid, modelName) {
+  // Each card has data-sid attribute — update its model span live
+  const card = document.querySelector(`.analysis-card[data-sid="${sid}"]`);
+  if (!card) return;
+  let span = card.querySelector('.model-name-label');
+  if (!span) {
+    span = document.createElement('span');
+    span.className = 'model-name-label';
+    span.style.cssText = 'font-size:0.7rem;color:var(--accent-2);font-weight:600;margin-left:6px;';
+    const nameEl = card.querySelector('.row-name');
+    if (nameEl) nameEl.appendChild(span);
+  }
+  span.textContent = `· ${modelName}`;
 }
 
 function filterLoss() {
@@ -1117,13 +1167,15 @@ function renderAnalysisList(type) {
     return;
   }
 
-  el.innerHTML = shown.map(a => `
-    <div class="row-item"
+  el.innerHTML = shown.map(a => {
+    const modelName = a.ModelName ? `<span class="model-name-label" style="font-size:0.7rem;color:var(--accent-2);font-weight:600;margin-left:6px;">· ${escHtml(a.ModelName)}</span>` : '';
+    return `
+    <div class="row-item analysis-card" data-sid="${a.AnalysisSid}"
          onclick="selectAnalysis('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')">
       <div>
         <div class="row-name">
           <span class="tag tag-${type}" style="margin-right:6px;">${type.toUpperCase()}</span>
-          ${escHtml(a.AnalysisName)}
+          ${escHtml(a.AnalysisName)}${modelName}
         </div>
         <div class="row-meta">SID: ${a.AnalysisSid} &nbsp;·&nbsp; ${a.Status || '—'}</div>
       </div>
@@ -1131,7 +1183,8 @@ function renderAnalysisList(type) {
               onclick="event.stopPropagation();selectAnalysis('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')">
         Select →
       </button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   if (arr.length > 20) {
     el.innerHTML += `<div class="page-info" style="padding:0.5rem 0;">Showing 20 of ${arr.length} — use search to filter</div>`;
@@ -1192,7 +1245,8 @@ function renderResultsPage() {
 
   // Update top bar chip
   document.getElementById('chip-name').textContent = s.name;
-  document.getElementById('chip-meta').textContent = `${s.projectName} · SID: ${s.sid}`;
+  const modelSuffix = state.lastModelLabel ? ` · ${state.lastModelLabel}` : '';
+  document.getElementById('chip-meta').textContent = `${s.projectName} · SID: ${s.sid}${modelSuffix}`;
   const tag = document.getElementById('chip-tag');
   tag.textContent = s.type;
   tag.className = `tag tag-${s.type.toLowerCase()}`;
@@ -1220,18 +1274,23 @@ async function fetchResults() {
     state.lastModels     = j.models || [];
     state.lastModelLabel = j.model_label || '';
 
-    // Enrich analysis name BEFORE rendering so chip shows correct name
+    // Back-fill model name on the analysis list entries so cards show it
     if (j.model_label) {
-      const enrichedName = `${j.model_label} — SID: ${s.sid}`;
-      state.selected.name = enrichedName;
+      const arrKey = s.type === 'LOSS' ? 'lossAnalyses' : 'hazAnalyses';
+      const fKey   = s.type === 'LOSS' ? 'lossFiltered'  : 'hazFiltered';
+      [state[arrKey], state[fKey]].forEach(arr => {
+        const entry = arr.find(a => String(a.AnalysisSid) === String(s.sid));
+        if (entry && !entry.ModelName) entry.ModelName = j.model_label;
+      });
     }
 
     renderResultsData(j.data, s.type);
     renderModelBar(j.models || []);
 
-    // Update chip with enriched name after render
+    // Update top-bar chip: name on first line, model below
+    document.getElementById('chip-name').textContent = s.name;
     if (j.model_label) {
-      document.getElementById('chip-name').textContent = state.selected.name;
+      document.getElementById('chip-meta').textContent = `${s.projectName} · SID: ${s.sid} · ${j.model_label}`;
     }
 
     document.getElementById('btn-download').style.display = 'inline-flex';

@@ -69,7 +69,7 @@ def get_analyses_for_project(project_sid, project_name):
                     'AnalysisName' : name,
                     'AnalysisType' : 'LOSS',
                     'Status'       : status,
-                    'Completed'    : analysis.get('Completed')
+                    'Completed'    : analysis.get('Completed'),
                 })
 
     return analyses
