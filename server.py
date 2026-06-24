@@ -285,16 +285,18 @@ def api_download_combined():
             name  = a.get("name", f"{atype}-{sid}")
             try:
                 if atype == "LOSS":
+                    from sor_report_builder import _prepare_df
                     results = get_all_loss_data(sid)
                     df_elt  = results.get("ELT", pd.DataFrame())
+                    df      = _prepare_df(df_elt)  # filter STC, coerce types, normalise cols
                     model_label = ""
-                    if not df_elt.empty and "ModelCode" in df_elt.columns:
-                        first_code = df_elt["ModelCode"].dropna().iloc[0] \
-                            if not df_elt["ModelCode"].dropna().empty else None
+                    if not df.empty and "ModelCode" in df.columns:
+                        first_code = df["ModelCode"].dropna().iloc[0] \
+                            if not df["ModelCode"].dropna().empty else None
                         if first_code:
                             model_label = get_model_description(first_code)
                     return {"sid": sid, "name": name, "type": atype,
-                            "df": df_elt, "model_label": model_label, "order": a.get("_order", 0)}
+                            "df": df, "model_label": model_label, "order": a.get("_order", 0)}
                 elif atype == "HAZ":
                     haz_data = get_hazard_results(sid)
                     return {"sid": sid, "name": name, "type": atype,

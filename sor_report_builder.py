@@ -63,19 +63,50 @@ def _add_model_code_ref(wb):
 
 
 def _prepare_df(df_elt):
-    """Filter to STC, coerce numeric types."""
+    """Filter to STC, coerce numeric types. Handles actual API column names."""
     if df_elt is None or df_elt.empty:
         return pd.DataFrame()
-    if 'CatalogTypeCode' in df_elt.columns:
-        df = df_elt[df_elt['CatalogTypeCode'] == 'STC'].copy()
-    else:
-        df = df_elt.copy()
+
+    df = df_elt.copy()
+
+    # ── Normalise column names — API may return with spaces or variations ─────
+    # Build a mapping from whatever names exist to our standard names
+    col_map = {}
+    for col in df.columns:
+        col_lower = col.lower().replace(" ", "").replace("_", "")
+        if col_lower == "grossloss" and "sd" not in col_lower:
+            col_map[col] = "GrossLoss"
+        elif col_lower == "grounduploss" and "sd" not in col_lower:
+            col_map[col] = "GroundUpLoss"
+        elif col_lower == "eventid":
+            col_map[col] = "EventID"
+        elif col_lower == "modelcode":
+            col_map[col] = "ModelCode"
+        elif col_lower == "yearid":
+            col_map[col] = "YearID"
+        elif col_lower == "catalogtypecode":
+            col_map[col] = "CatalogTypeCode"
+        elif col_lower == "eventdescription":
+            col_map[col] = "EventDescription"
+    if col_map:
+        df = df.rename(columns=col_map)
+
+    # ── Filter to STC only ────────────────────────────────────────────────────
+    if 'CatalogTypeCode' in df.columns:
+        df = df[df['CatalogTypeCode'] == 'STC'].copy()
+
+    # ── Coerce numeric columns ────────────────────────────────────────────────
     for col in ("EventID", "GrossLoss", "GroundUpLoss", "ModelCode", "YearID"):
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
-    df = df.dropna(subset=["YearID", "GroundUpLoss", "GrossLoss"])
+
+    # ── Drop rows missing critical fields ─────────────────────────────────────
+    required = [c for c in ["YearID", "GroundUpLoss", "GrossLoss"] if c in df.columns]
+    if required:
+        df = df.dropna(subset=required)
+
     unique_years = df["YearID"].nunique() if not df.empty else 0
-    n_years = int(df["YearID"].max()) if not df.empty else N_YEARS
+    n_years      = int(df["YearID"].max()) if not df.empty else N_YEARS
     print(f"  [SOR] Events: {len(df):,} | Unique years with events: {unique_years:,} of {n_years:,}")
     if df.empty:
         print(f"  [SOR] WARNING: No STC events — analysis may use RDS/HIS catalog only")
@@ -235,13 +266,14 @@ def build_combined_sor_report(meta, analyses):
     wb.remove(wb.active)
 
     for analysis in analyses:
-        sid   = analysis["sid"]
-        atype = analysis["type"]
-        sname = analysis.get("sheet_name", f"{atype}-{sid}")
+        sid    = analysis["sid"]
+        atype  = analysis["type"]
+        sname  = analysis.get("sheet_name", f"{atype}-{sid}")
         df_raw = analysis.get("df")
 
         if atype == "LOSS":
-            df = _prepare_df(df_raw)
+            # df already prepared by server.py fetch thread — pass directly
+            df = df_raw if isinstance(df_raw, pd.DataFrame) else pd.DataFrame()
             _build_loss_sheet(wb, df, {**meta, "analysis_sid": sid,
                                         "analysis_name": analysis.get("name", sname)})
         elif atype == "HAZ":
