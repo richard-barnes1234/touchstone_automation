@@ -712,7 +712,7 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
     <div id="analyses-section" style="display:none;">
       <div class="section-label" id="analyses-label">Analyses</div>
 
-      <!-- Combine bar — appears when 1+ analyses checked -->
+      <!-- Combine bar — appears when 2+ analyses checked -->
       <div class="combine-bar" id="combine-bar">
         <span class="combine-label" id="combine-label">0 analyses selected</span>
         <div class="combine-filename-row">
@@ -883,14 +883,13 @@ function toggleCombine(sid, name, type) {
 function updateCombineBar() {
   const bar = document.getElementById('combine-bar');
   const lbl = document.getElementById('combine-label');
-  if (!bar || !lbl) return;
   const n   = state.combineSelection.length;
   if (n >= 1) {
     bar.classList.add('show');
     lbl.textContent = `${n} analys${n === 1 ? 'is' : 'es'} selected`;
     // Auto-fill filename
     const fn = document.getElementById('combine-filename');
-    if (fn && !fn.value) {
+    if (!fn.value) {
       fn.value = `${state.selected?.projectName || 'Combined'} Combined`;
     }
   } else {
@@ -1042,12 +1041,10 @@ function loadMoreProjects() {
 
 function selectProject(sid, name) {
   state.selected = { ...state.selected, projectSid: sid, projectName: name };
-  state.lossAnalyses    = [];
-  state.hazAnalyses     = [];
-  state.lossFiltered    = [];
-  state.hazFiltered     = [];
-  state.combineSelection = [];
-  updateCombineBar();
+  state.lossAnalyses = [];
+  state.hazAnalyses  = [];
+  state.lossFiltered = [];
+  state.hazFiltered  = [];
   document.getElementById('analyses-section').style.display = 'block';
   document.getElementById('analyses-label').textContent = `Analyses — ${name}`;
   document.getElementById('loss-list').innerHTML = '';
@@ -1072,8 +1069,6 @@ async function loadLossAnalyses() {
     state.lossFiltered = j.data;
     document.getElementById('loss-count').textContent = `${j.count} found`;
     renderAnalysisList('loss');
-    // Keep overlay up — enrich model names, then hide
-    await enrichModelNames(j.data, 'loss');
   } catch(e) {
     document.getElementById('loss-list').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
   } finally { hideLoading(); }
@@ -1094,69 +1089,6 @@ async function loadHazAnalyses() {
   } catch(e) {
     document.getElementById('haz-list').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
   } finally { hideLoading(); }
-}
-
-// ── Background model name enrichment ──────────────────────────────────────
-// Runs while loading overlay is still showing — updates overlay text per batch
-async function enrichModelNames(analyses, listType) {
-  const BATCH = 10;
-  const pending = analyses.filter(a => !a.ModelName);
-  if (!pending.length) return;
-
-  const total   = pending.length;
-  const batches = Math.ceil(total / BATCH);
-
-  for (let i = 0; i < pending.length; i += BATCH) {
-    const batchNum = Math.floor(i / BATCH) + 1;
-    const done     = Math.min(i + BATCH, total);
-    document.getElementById('loading-text').textContent =
-      `Loading model names… ${done} / ${total} (batch ${batchNum}/${batches})`;
-
-    const batch = pending.slice(i, i + BATCH);
-    const sids  = batch.map(a => a.AnalysisSid);
-    try {
-      const r = await fetch('/api/analyses/model-batch', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ sids })
-      });
-      const j = await r.json();
-      if (j.ok && j.data) {
-        const arr = listType === 'loss' ? state.lossAnalyses : state.hazAnalyses;
-        const flt = listType === 'loss' ? state.lossFiltered  : state.hazFiltered;
-        for (const [sid, name] of Object.entries(j.data)) {
-          [arr, flt].forEach(list => {
-            const entry = list.find(a => String(a.AnalysisSid) === String(sid));
-            if (entry) entry.ModelName = name;
-          });
-          updateCardModelName(sid, name);
-        }
-      }
-    } catch (_) { /* silent — model names are best-effort */ }
-
-    if (i + BATCH < pending.length) await new Promise(res => setTimeout(res, 150));
-  }
-
-  // Refresh the list once fully enriched so model names show correctly
-  // (covers cards that weren't rendered yet due to the 20-item slice)
-  renderAnalysisList(listType);
-  document.getElementById(listType + '-count').textContent = `${analyses.length} found`;
-}
-
-function updateCardModelName(sid, modelName) {
-  const card = document.querySelector(`.analysis-card[data-sid="${sid}"]`);
-  if (!card) return;
-  let span = card.querySelector('.model-name-label');
-  if (span) {
-    span.textContent = `· ${modelName}`;
-  } else {
-    span = document.createElement('span');
-    span.className = 'model-name-label';
-    span.style.cssText = 'font-size:0.7rem;color:var(--accent-2);font-weight:600;margin-left:6px;';
-    span.textContent = `· ${modelName}`;
-    const nameEl = card.querySelector('.row-name');
-    if (nameEl) nameEl.appendChild(span);
-  }
 }
 
 function filterLoss() {
@@ -1186,16 +1118,18 @@ function renderAnalysisList(type) {
   }
 
   el.innerHTML = shown.map(a => {
-    const modelName  = a.ModelName ? `<span class="model-name-label" style="font-size:0.7rem;color:var(--accent-2);font-weight:600;margin-left:6px;">· ${escHtml(a.ModelName)}</span>` : '';
-    const isChecked  = state.combineSelection.some(x => String(x.sid) === String(a.AnalysisSid));
+    const isChecked = state.combineSelection.some(x => String(x.sid) === String(a.AnalysisSid));
+    const modelName = a.ModelName
+      ? `<span style="font-size:0.7rem;color:var(--accent-2);font-weight:600;margin-left:6px;">· ${escHtml(a.ModelName)}</span>`
+      : '';
     return `
     <div class="row-item analysis-card ${isChecked ? 'selected' : ''}" data-sid="${a.AnalysisSid}">
-      <div style="display:flex;align-items:center;gap:0.6rem;flex:1;min-width:0;"
-           onclick="selectAnalysis('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')">
+      <div style="display:flex;align-items:center;gap:0.6rem;flex:1;min-width:0;">
         <input type="checkbox" class="analysis-checkbox"
                ${isChecked ? 'checked' : ''}
                onclick="event.stopPropagation();toggleCombine('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')" />
-        <div style="min-width:0;">
+        <div style="min-width:0;cursor:pointer;"
+             onclick="selectAnalysis('${a.AnalysisSid}','${escHtml(a.AnalysisName)}','${type.toUpperCase()}')">
           <div class="row-name">
             <span class="tag tag-${type}" style="margin-right:6px;">${type.toUpperCase()}</span>
             ${escHtml(a.AnalysisName)}${modelName}
@@ -1224,10 +1158,12 @@ function selectAnalysis(sid, name, type) {
   state.selectedCols = {};
   state.lastModels   = [];
   state._activeTab   = null;
-  // Show persistent toast
-  document.getElementById('toast-tag').textContent  = type;
-  document.getElementById('toast-msg').textContent  = `${name} (SID: ${sid}) selected`;
-  document.getElementById('selection-toast').classList.add('show');
+  // Only show "Go to Results" toast when no combine selection is active
+  if (state.combineSelection.length === 0) {
+    document.getElementById('toast-tag').textContent  = type;
+    document.getElementById('toast-msg').textContent  = `${name} (SID: ${sid}) selected`;
+    document.getElementById('selection-toast').classList.add('show');
+  }
 }
 
 function goToResults() {
@@ -1269,8 +1205,7 @@ function renderResultsPage() {
 
   // Update top bar chip
   document.getElementById('chip-name').textContent = s.name;
-  const modelSuffix = state.lastModelLabel ? ` · ${state.lastModelLabel}` : '';
-  document.getElementById('chip-meta').textContent = `${s.projectName} · SID: ${s.sid}${modelSuffix}`;
+  document.getElementById('chip-meta').textContent = `${s.projectName} · SID: ${s.sid}`;
   const tag = document.getElementById('chip-tag');
   tag.textContent = s.type;
   tag.className = `tag tag-${s.type.toLowerCase()}`;
@@ -1298,23 +1233,18 @@ async function fetchResults() {
     state.lastModels     = j.models || [];
     state.lastModelLabel = j.model_label || '';
 
-    // Back-fill model name on the analysis list entries so cards show it
+    // Enrich analysis name BEFORE rendering so chip shows correct name
     if (j.model_label) {
-      const arrKey = s.type === 'LOSS' ? 'lossAnalyses' : 'hazAnalyses';
-      const fKey   = s.type === 'LOSS' ? 'lossFiltered'  : 'hazFiltered';
-      [state[arrKey], state[fKey]].forEach(arr => {
-        const entry = arr.find(a => String(a.AnalysisSid) === String(s.sid));
-        if (entry && !entry.ModelName) entry.ModelName = j.model_label;
-      });
+      const enrichedName = `${j.model_label} — SID: ${s.sid}`;
+      state.selected.name = enrichedName;
     }
 
     renderResultsData(j.data, s.type);
     renderModelBar(j.models || []);
 
-    // Update top-bar chip: name on first line, model below
-    document.getElementById('chip-name').textContent = s.name;
+    // Update chip with enriched name after render
     if (j.model_label) {
-      document.getElementById('chip-meta').textContent = `${s.projectName} · SID: ${s.sid} · ${j.model_label}`;
+      document.getElementById('chip-name').textContent = state.selected.name;
     }
 
     document.getElementById('btn-download').style.display = 'inline-flex';
