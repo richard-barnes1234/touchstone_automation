@@ -4,6 +4,7 @@
 
 from flask import Flask, jsonify, request, send_file, render_template_string
 import urllib3
+import traceback
 import pandas as pd
 from model_lookup import get_model_description, get_unique_models
 from sor_report_builder import build_sor_report
@@ -243,14 +244,10 @@ def api_download():
 
         # Filename: ProjectName SID: AnalysisSid
         # e.g. "Providence_26 SID: 141190.xlsx"
-        # Use custom filename if provided, otherwise use project + SID pattern
-        custom = meta.get("custom_filename", "").strip()
-        if custom:
-            filename = custom if custom.endswith(".xlsx") else custom + ".xlsx"
-        else:
-            project = "".join(c for c in meta.get("project_name", "Report") if c.isalnum() or c in " _-").strip()
-            sid     = meta.get("analysis_sid", "")
-            filename = f"{project} SID: {sid}.xlsx"
+        # Filename always follows: "ProjectName SID: AnalysisSid.xlsx"
+        project  = "".join(c for c in meta.get("project_name", "Report") if c.isalnum() or c in " _-").strip()
+        sid      = meta.get("analysis_sid", "")
+        filename = f"{project} SID: {sid}.xlsx"
 
         return send_file(
             excel_file,
@@ -267,9 +264,12 @@ def api_download():
 @app.route("/api/download/combined", methods=["POST"])
 def api_download_combined():
     try:
-        body         = request.json
-        meta         = body.get("meta", {})
-        analysis_list = body.get("analyses", [])  # [{sid, name, type}, ...]
+        import concurrent.futures
+        import traceback
+
+        body          = request.json
+        meta          = body.get("meta", {})
+        analysis_list = body.get("analyses", [])
 
         if not analysis_list:
             return jsonify({"ok": False, "error": "No analyses provided"}), 400
@@ -277,8 +277,50 @@ def api_download_combined():
         from sor_report_builder import build_combined_sor_report
         from touchstone_client import get_all_loss_data, get_hazard_results
 
-        enriched      = []
-        used_names    = set()
+        # ── Fetch all ELTs in parallel ────────────────────────────────────────
+        def fetch_analysis(a):
+            """Fetch one analysis — runs in a thread."""
+            sid   = int(a["sid"])
+            atype = a["type"]
+            name  = a.get("name", f"{atype}-{sid}")
+            try:
+                if atype == "LOSS":
+                    results = get_all_loss_data(sid)
+                    df_elt  = results.get("ELT", pd.DataFrame())
+                    model_label = ""
+                    if not df_elt.empty and "ModelCode" in df_elt.columns:
+                        first_code = df_elt["ModelCode"].dropna().iloc[0] \
+                            if not df_elt["ModelCode"].dropna().empty else None
+                        if first_code:
+                            model_label = get_model_description(first_code)
+                    return {"sid": sid, "name": name, "type": atype,
+                            "df": df_elt, "model_label": model_label, "order": a.get("_order", 0)}
+                elif atype == "HAZ":
+                    haz_data = get_hazard_results(sid)
+                    return {"sid": sid, "name": name, "type": atype,
+                            "df": haz_data, "model_label": "", "order": a.get("_order", 0)}
+            except Exception as e:
+                traceback.print_exc()
+                return {"sid": sid, "name": name, "type": atype,
+                        "df": pd.DataFrame(), "model_label": "", "order": a.get("_order", 0),
+                        "error": str(e)}
+
+        # Tag each analysis with its original order so we preserve sequence
+        for i, a in enumerate(analysis_list):
+            a["_order"] = i
+
+        max_workers = min(len(analysis_list), 6)  # cap at 6 — avoid overwhelming the API
+        print(f"  [Combined] Fetching {len(analysis_list)} analyses with {max_workers} threads...")
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as ex:
+            futures  = [ex.submit(fetch_analysis, a) for a in analysis_list]
+            fetched  = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+        # Sort back to original order
+        fetched.sort(key=lambda x: x["order"])
+
+        # ── Assign unique sheet names ─────────────────────────────────────────
+        used_names = set()
 
         def unique_name(base):
             base = base[:28].strip()
@@ -290,38 +332,18 @@ def api_download_combined():
             used_names.add(name)
             return name
 
-        for idx, a in enumerate(analysis_list):
-            sid   = int(a["sid"])
-            atype = a["type"]
-            name  = a.get("name", f"{atype}-{sid}")
-
-            if atype == "LOSS":
-                results = get_all_loss_data(sid)
-                df_elt  = results.get("ELT", pd.DataFrame())
-                # Use model label as sheet name
-                model_label = ""
-                if not df_elt.empty and "ModelCode" in df_elt.columns:
-                    first_code = df_elt["ModelCode"].dropna().iloc[0] if not df_elt["ModelCode"].dropna().empty else None
-                    if first_code:
-                        model_label = get_model_description(first_code)
-                sheet_name = unique_name(model_label or name or f"LOSS-{sid}")
-                enriched.append({
-                    "sid": sid, "name": name, "type": atype,
-                    "df": df_elt, "sheet_name": sheet_name
-                })
-            elif atype == "HAZ":
-                haz_data   = get_hazard_results(sid)
-                sheet_name = unique_name(f"HAZ {sid}")
-                enriched.append({
-                    "sid": sid, "name": name, "type": atype,
-                    "df": haz_data, "sheet_name": sheet_name
-                })
+        enriched = []
+        for item in fetched:
+            if item["type"] == "LOSS":
+                sheet_name = unique_name(item["model_label"] or item["name"] or f"LOSS-{item['sid']}")
+            else:
+                sheet_name = unique_name(f"HAZ {item['sid']}")
+            enriched.append({**item, "sheet_name": sheet_name})
 
         excel_file = build_combined_sor_report(meta, enriched)
 
-        custom   = meta.get("custom_filename", "").strip()
         project  = "".join(c for c in meta.get("project_name", "Combined") if c.isalnum() or c in " _-").strip()
-        filename = f"{custom}.xlsx" if custom else f"{project} Combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filename = f"{project} Combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
 
         return send_file(
             excel_file,
@@ -330,6 +352,7 @@ def api_download_combined():
             download_name=filename
         )
     except Exception as e:
+        traceback.print_exc()
         return jsonify({"ok": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
