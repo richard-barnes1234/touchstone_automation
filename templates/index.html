@@ -728,6 +728,8 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
           <div class="btn-row">
             <button class="btn btn-primary btn-sm" onclick="loadLossAnalyses()">📋 Load Loss Analyses</button>
             <span id="loss-count" style="font-size:0.75rem;color:var(--ink-2);align-self:center;"></span>
+            <button class="btn btn-secondary btn-sm" onclick="selectAllAnalyses('loss')" id="loss-select-all" style="display:none;">☑ All</button>
+            <button class="btn btn-secondary btn-sm" onclick="selectNoneAnalyses('loss')" id="loss-select-none" style="display:none;">☐ None</button>
           </div>
           <div class="search-wrap">
             <span class="search-icon">⌕</span>
@@ -739,6 +741,8 @@ tbody td { padding: 0.55rem 0.9rem; color: var(--ink); white-space: nowrap; font
           <div class="btn-row">
             <button class="btn btn-sm" style="background:var(--tag-haz);color:var(--tag-haz-t);font-weight:600;" onclick="loadHazAnalyses()">⚠ Load Hazard Analyses</button>
             <span id="haz-count" style="font-size:0.75rem;color:var(--ink-2);align-self:center;"></span>
+            <button class="btn btn-secondary btn-sm" onclick="selectAllAnalyses('haz')" id="haz-select-all" style="display:none;">☑ All</button>
+            <button class="btn btn-secondary btn-sm" onclick="selectNoneAnalyses('haz')" id="haz-select-none" style="display:none;">☐ None</button>
           </div>
           <div class="search-wrap">
             <span class="search-icon">⌕</span>
@@ -869,7 +873,7 @@ const state = {
 // ── Navigation ─────────────────────────────────────────────────────────────
 // ── Multi-select combine ──────────────────────────────────────────────────
 function toggleCombine(sid, name, type) {
-  const idx = state.combineSelection.findIndex(x => x.sid === sid);
+  const idx = state.combineSelection.findIndex(x => String(x.sid) === String(sid));
   if (idx >= 0) {
     state.combineSelection.splice(idx, 1);
   } else {
@@ -878,6 +882,50 @@ function toggleCombine(sid, name, type) {
   updateCombineBar();
   renderAnalysisList('loss');
   renderAnalysisList('haz');
+
+  const n = state.combineSelection.length;
+  if (n === 1) {
+    const s = state.combineSelection[0];
+    document.getElementById('toast-tag').textContent  = s.type;
+    document.getElementById('toast-msg').textContent  = `${s.name} (SID: ${s.sid}) selected`;
+    document.getElementById('selection-toast').classList.add('show');
+  } else {
+    // 0 or 2+ selected — hide toast
+    document.getElementById('selection-toast').classList.remove('show');
+  }
+}
+
+function selectAllAnalyses(type) {
+  const arr = type === 'loss' ? state.lossFiltered : state.hazFiltered;
+  arr.forEach(a => {
+    const alreadyIn = state.combineSelection.some(x => String(x.sid) === String(a.AnalysisSid));
+    if (!alreadyIn) {
+      state.combineSelection.push({ sid: a.AnalysisSid, name: a.AnalysisName, type: type.toUpperCase() });
+    }
+  });
+  updateCombineBar();
+  renderAnalysisList('loss');
+  renderAnalysisList('haz');
+  const n = state.combineSelection.length;
+  document.getElementById('selection-toast').classList[n === 1 ? 'add' : 'remove']('show');
+}
+
+function selectNoneAnalyses(type) {
+  const arr = type === 'loss' ? state.lossFiltered : state.hazFiltered;
+  const sids = new Set(arr.map(a => String(a.AnalysisSid)));
+  state.combineSelection = state.combineSelection.filter(x => !sids.has(String(x.sid)));
+  updateCombineBar();
+  renderAnalysisList('loss');
+  renderAnalysisList('haz');
+  const n = state.combineSelection.length;
+  if (n === 1) {
+    const s = state.combineSelection[0];
+    document.getElementById('toast-tag').textContent = s.type;
+    document.getElementById('toast-msg').textContent = `${s.name} (SID: ${s.sid}) selected`;
+    document.getElementById('selection-toast').classList.add('show');
+  } else {
+    document.getElementById('selection-toast').classList.remove('show');
+  }
 }
 
 function updateCombineBar() {
@@ -1069,6 +1117,8 @@ async function loadLossAnalyses() {
     state.lossFiltered = j.data;
     document.getElementById('loss-count').textContent = `${j.count} found`;
     renderAnalysisList('loss');
+    document.getElementById('loss-select-all').style.display = '';
+    document.getElementById('loss-select-none').style.display = '';
     // Enrich model names in background batches
     await enrichModelNames(j.data, 'loss');
   } catch(e) {
@@ -1146,6 +1196,8 @@ async function loadHazAnalyses() {
     state.hazFiltered = j.data;
     document.getElementById('haz-count').textContent = `${j.count} found`;
     renderAnalysisList('haz');
+    document.getElementById('haz-select-all').style.display = '';
+    document.getElementById('haz-select-none').style.display = '';
   } catch(e) {
     document.getElementById('haz-list').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
   } finally { hideLoading(); }
