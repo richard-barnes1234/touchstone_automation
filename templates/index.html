@@ -1069,9 +1069,69 @@ async function loadLossAnalyses() {
     state.lossFiltered = j.data;
     document.getElementById('loss-count').textContent = `${j.count} found`;
     renderAnalysisList('loss');
+    // Enrich model names in background batches
+    await enrichModelNames(j.data, 'loss');
   } catch(e) {
     document.getElementById('loss-list').innerHTML = `<div class="alert alert-error">✕ ${e.message}</div>`;
   } finally { hideLoading(); }
+}
+
+// ── Background model name enrichment ──────────────────────────────────────
+async function enrichModelNames(analyses, listType) {
+  const BATCH   = 10;
+  const pending = analyses.filter(a => !a.ModelName);
+  if (!pending.length) return;
+
+  const total   = pending.length;
+  const batches = Math.ceil(total / BATCH);
+
+  for (let i = 0; i < pending.length; i += BATCH) {
+    const batchNum = Math.floor(i / BATCH) + 1;
+    const done     = Math.min(i + BATCH, total);
+    document.getElementById('loading-text').textContent =
+      `Loading model names… ${done} / ${total} (batch ${batchNum}/${batches})`;
+
+    const batch = pending.slice(i, i + BATCH);
+    const sids  = batch.map(a => a.AnalysisSid);
+    try {
+      const r = await fetch('/api/analyses/model-batch', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ sids })
+      });
+      const j = await r.json();
+      if (j.ok && j.data) {
+        const arr = listType === 'loss' ? state.lossAnalyses : state.hazAnalyses;
+        const flt = listType === 'loss' ? state.lossFiltered  : state.hazFiltered;
+        for (const [sid, name] of Object.entries(j.data)) {
+          [arr, flt].forEach(list => {
+            const entry = list.find(a => String(a.AnalysisSid) === String(sid));
+            if (entry) entry.ModelName = name;
+          });
+          updateCardModelName(sid, name);
+        }
+      }
+    } catch (_) { /* silent — model names are best-effort */ }
+
+    if (i + BATCH < pending.length) await new Promise(res => setTimeout(res, 150));
+  }
+  renderAnalysisList(listType);
+}
+
+function updateCardModelName(sid, modelName) {
+  const card = document.querySelector(`.analysis-card[data-sid="${sid}"]`);
+  if (!card) return;
+  let span = card.querySelector('.model-name-label');
+  if (span) {
+    span.textContent = `· ${modelName}`;
+  } else {
+    span = document.createElement('span');
+    span.className = 'model-name-label';
+    span.style.cssText = 'font-size:0.7rem;color:var(--accent-2);font-weight:600;margin-left:6px;';
+    span.textContent = `· ${modelName}`;
+    const nameEl = card.querySelector('.row-name');
+    if (nameEl) nameEl.appendChild(span);
+  }
 }
 
 async function loadHazAnalyses() {
