@@ -231,47 +231,23 @@ def build_combined_sor_report(meta, analyses):
     """
     wb = Workbook()
 
-    # Summary sheet
-    ws_sum = wb.active
-    ws_sum.title = "Summary"
-    ws_sum["A1"] = meta.get("project_name", "Combined Report")
-    ws_sum["A1"].font = Font(name="Calibri", bold=True, size=16, color="1E3A5F")
-    ws_sum["A3"] = "Generated"
-    ws_sum["B3"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Remove default sheet — sheets are added per analysis below
+    wb.remove(wb.active)
 
-    sum_headers = ["#", "Analysis SID", "Type", "Sheet", "Events", "Status"]
-    _style_header(ws_sum, 5, 1, len(sum_headers))
-    for c_idx, h in enumerate(sum_headers, start=1):
-        ws_sum.cell(row=5, column=c_idx, value=h)
-
-    thin = _thin()
-    for row_idx, analysis in enumerate(analyses, start=1):
+    for analysis in analyses:
         sid   = analysis["sid"]
         atype = analysis["type"]
         sname = analysis.get("sheet_name", f"{atype}-{sid}")
         df_raw = analysis.get("df")
 
         if atype == "LOSS":
-            df      = _prepare_df(df_raw)
-            count   = f"{len(df):,} STC events"
-            status  = "OK" if not df.empty else "No STC data"
+            df = _prepare_df(df_raw)
             _build_loss_sheet(wb, df, {**meta, "analysis_sid": sid,
                                         "analysis_name": analysis.get("name", sname)})
-        else:
-            count  = "HAZ"
-            status = "OK"
+        elif atype == "HAZ":
             ws_haz = wb.create_sheet(title=sname[:31])
             ws_haz["A1"] = f"Hazard Analysis — SID {sid}"
             ws_haz["A1"].font = Font(name="Calibri", bold=True, size=14, color="1E3A5F")
-
-        r = 5 + row_idx
-        for c_idx, v in enumerate([row_idx, sid, atype, sname, count, status], start=1):
-            cell = ws_sum.cell(row=r, column=c_idx, value=v)
-            cell.border = thin
-            cell.font   = Font(name="Calibri", size=10)
-
-    for col, width in zip("ABCDEF", [5, 14, 8, 30, 18, 12]):
-        ws_sum.column_dimensions[col].width = width
 
     _add_model_code_ref(wb)
 

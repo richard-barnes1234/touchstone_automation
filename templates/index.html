@@ -1218,11 +1218,23 @@ function selectAnalysis(sid, name, type) {
   state.selectedCols = {};
   state.lastModels   = [];
   state._activeTab   = null;
-  // Only show "Go to Results" toast when no combine selection is active
-  if (state.combineSelection.length === 0) {
+
+  // Also add to combine selection (tick the checkbox)
+  const alreadyIn = state.combineSelection.some(x => String(x.sid) === String(sid));
+  if (!alreadyIn) {
+    state.combineSelection.push({ sid, name, type });
+  }
+  updateCombineBar();
+  renderAnalysisList('loss');
+  renderAnalysisList('haz');
+
+  // Toast: show only when exactly 1 analysis is selected
+  if (state.combineSelection.length === 1) {
     document.getElementById('toast-tag').textContent  = type;
     document.getElementById('toast-msg').textContent  = `${name} (SID: ${sid}) selected`;
     document.getElementById('selection-toast').classList.add('show');
+  } else {
+    document.getElementById('selection-toast').classList.remove('show');
   }
 }
 
