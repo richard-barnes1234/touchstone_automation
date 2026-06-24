@@ -211,8 +211,7 @@ def _build_loss_sheet(ws, calc, meta):
     C_AAL_OEP_GU = 12  # L: OEP GU AAL
     C_AAL_OEP_GR = 13  # M: OEP GR AAL
 
-    # Key RPs to highlight yellow
-    highlight_rps = {10000, 5000, 1000, 500, 250, 100}
+
 
     # ── Build merged data table ───────────────────────────────────────────────
     # One row per year with events, sorted by OEP GU descending
@@ -278,9 +277,7 @@ def _build_loss_sheet(ws, calc, meta):
     for i, row in merged.iterrows():
         r      = 3 + i
         rp_val = round(row["ReturnPeriod"], 1)
-        # Highlight key return period rows yellow
-        is_key = any(abs(rp_val - k) < 0.6 for k in highlight_rps)
-        bg     = "FFFF00" if is_key else ("F0F4F8" if i % 2 == 1 else "FFFFFF")
+        bg = "F0F4F8" if i % 2 == 1 else "FFFFFF"
 
         values = {
             C_LABEL:  int(row["YearID"]),
@@ -387,7 +384,9 @@ def build_sor_report(meta, df_elt):
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "LossTables"
+    # Name the sheet after the model label, fallback to "LossTables"
+    sheet_name = (calc["model_label"] or meta.get("analysis_name", "LossTables"))[:31].strip()
+    ws.title = sheet_name if sheet_name else "LossTables"
 
     _build_loss_sheet(ws, calc, meta)
     _add_model_code_ref(wb)
