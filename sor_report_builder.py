@@ -176,23 +176,39 @@ def _build_loss_sheet(wb, df, meta):
                     except (ValueError, TypeError): pass
                 ws.cell(row=r_idx, column=c_idx, value=val)
 
-    # ── AGG table — static year integers, SUMIFS formulas ────────────────────
-    for i, year in enumerate(range(1, n_years + 1)):
-        r = 4 + i
-        ws.cell(row=r, column=9,  value=year)                                    # I: Year (static int)
-        ws.cell(row=r, column=10, value=f"=SUMIFS($E:$E,$G:$G,$O{r})")          # J: GULoss
-        ws.cell(row=r, column=11, value=f"=(J{r}-$Z$4)^2")                      # K: GUStdDevSq
-        ws.cell(row=r, column=12, value=f"=SUMIFS($D:$D,$G:$G,$O{r})")          # L: GRLoss
-        ws.cell(row=r, column=13, value=f"=(L{r}-$Z$5)^2")                      # M: GRStdDevSq
+    # ── AGG table — bulk write using append() ─────────────────────────────────
+    # Write year integers as static values — formulas reference column O (OCC Year)
+    # Pre-build all rows as tuples for fast bulk insert
+    agg_rows = []
+    for year in range(1, n_years + 1):
+        r = 3 + year  # row number
+        agg_rows.append((
+            year,                                              # I: Year
+            f"=SUMIFS($E:$E,$G:$G,$O{r})",                   # J: GULoss
+            f"=(J{r}-$Z$4)^2",                                # K: GUStdDevSq
+            f"=SUMIFS($D:$D,$G:$G,$O{r})",                   # L: GRLoss
+            f"=(L{r}-$Z$5)^2",                                # M: GRStdDevSq
+        ))
 
-    # ── OCC table — static year integers, MAXIFS + RANK.EQ formulas ──────────
-    for i, year in enumerate(range(1, n_years + 1)):
+    # OCC rows
+    occ_rows = []
+    for year in range(1, n_years + 1):
+        r = 3 + year
+        occ_rows.append((
+            year,                                                                             # O: Year
+            f"=1/(_xlfn.RANK.EQ(Q{r},$Q$4:$Q${last_occ_row},0)/{n_years})",                 # P: GURP
+            f"=_xlfn.MAXIFS($E:$E,$G:$G,$O{r})",                                            # Q: GULoss
+            f"=1/(_xlfn.RANK.EQ(S{r},$S$4:$S${last_occ_row},0)/{n_years})",                 # R: GRRP
+            f"=_xlfn.MAXIFS(D:D,$G:$G,$O{r})",                                              # S: GRLoss
+        ))
+
+    # Write AGG to cols I-M (9-13) and OCC to cols O-S (15-19) simultaneously
+    for i, (agg_row, occ_row) in enumerate(zip(agg_rows, occ_rows)):
         r = 4 + i
-        ws.cell(row=r, column=15, value=year)                                                                     # O: Year (static int)
-        ws.cell(row=r, column=16, value=f"=1/(_xlfn.RANK.EQ(Q{r},$Q$4:$Q${last_occ_row},0)/{n_years})")         # P: GURP
-        ws.cell(row=r, column=17, value=f"=_xlfn.MAXIFS($E:$E,$G:$G,$O{r})")                                    # Q: GULoss
-        ws.cell(row=r, column=18, value=f"=1/(_xlfn.RANK.EQ(S{r},$S$4:$S${last_occ_row},0)/{n_years})")         # R: GRRP
-        ws.cell(row=r, column=19, value=f"=_xlfn.MAXIFS(D:D,$G:$G,$O{r})")                                      # S: GRLoss
+        for c_idx, val in enumerate(agg_row, start=9):
+            ws.cell(row=r, column=c_idx, value=val)
+        for c_idx, val in enumerate(occ_row, start=15):
+            ws.cell(row=r, column=c_idx, value=val)
 
     # ── EP/AAL/SD summary (rows 4-5) — LARGE-based ───────────────────────────
     ws["U4"] = "Ground Up"
