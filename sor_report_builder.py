@@ -1,32 +1,14 @@
 # sor_report_builder.py
-# ─────────────────────────────────────────────────────────────────────────────
-# Builds the broker-facing SOR Excel report replicating the structure from
-# Copy_of_SampleReportCalculation_SOR_20260618.xlsx (Richard's sample file).
-#
-# Sheet 1: LossTables
-#   - Raw STC ELT rows (columns A-G)
-#   - AGG table (cols I-M): SUMIFS per year → AAL + SD
-#   - OCC table (cols O-S): MAXIFS per year → RANK-based return periods
-#   - EP/AAL/SD summary (cols U-AA): LARGE-based RP lookup
-#   - Top 5 events table (rows 7-12): largest 5 occurrence events
-#
-# Sheet 2: ModelCodeRef — model code lookup used by U1 VLOOKUP label
-#
-# All numeric columns written as Python int/float (not strings) so
-# SUMIFS/MAXIFS formulas find matches correctly.
-# ─────────────────────────────────────────────────────────────────────────────
-
 from io import BytesIO
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from datetime import datetime
-
 from model_code_ref import MODEL_CODE_REF
 from model_lookup import get_model_description
 
-N_YEARS = 10000  # default — overridden per analysis from max(YearID)
+N_YEARS = 10000
 
 
 def _thin():
@@ -66,11 +48,8 @@ def _prepare_df(df_elt):
     """Filter to STC, coerce numeric types. Handles actual API column names."""
     if df_elt is None or df_elt.empty:
         return pd.DataFrame()
-
     df = df_elt.copy()
-
-    # ── Normalise column names — API may return with spaces or variations ─────
-    # Build a mapping from whatever names exist to our standard names
+    # Normalise column names
     col_map = {}
     for col in df.columns:
         col_lower = col.lower().replace(" ", "").replace("_", "")
@@ -90,38 +69,36 @@ def _prepare_df(df_elt):
             col_map[col] = "EventDescription"
     if col_map:
         df = df.rename(columns=col_map)
-
-    # ── Filter to STC only ────────────────────────────────────────────────────
     if 'CatalogTypeCode' in df.columns:
         df = df[df['CatalogTypeCode'] == 'STC'].copy()
-
-    # ── Coerce numeric columns ────────────────────────────────────────────────
     for col in ("EventID", "GrossLoss", "GroundUpLoss", "ModelCode", "YearID"):
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
-
-    # ── Drop rows missing critical fields ─────────────────────────────────────
     required = [c for c in ["YearID", "GroundUpLoss", "GrossLoss"] if c in df.columns]
     if required:
         df = df.dropna(subset=required)
-
     unique_years = df["YearID"].nunique() if not df.empty else 0
-    n_years      = int(df["YearID"].max()) if not df.empty else N_YEARS
-    print(f"  [SOR] Events: {len(df):,} | Unique years with events: {unique_years:,} of {n_years:,}")
+    max_year_id  = int(df["YearID"].max()) if not df.empty else N_YEARS
+    print(f"  [SOR] Events: {len(df):,} | Unique years: {unique_years:,} | max YearID: {max_year_id:,}")
     if df.empty:
-        print(f"  [SOR] WARNING: No STC events — analysis may use RDS/HIS catalog only")
+        print("  [SOR] WARNING: No STC events — analysis may use RDS/HIS catalog only")
     return df
 
 
 def _build_loss_sheet(wb, df, meta):
-    """
-    Builds the LossTables sheet replicating Richard's sample file exactly.
-    Sheet named after the model label.
-    """
-    # Detect N_years from data
-    n_years = int(df["YearID"].max()) if not df.empty else N_YEARS
+    """Builds the LossTables sheet. Sheet named after the model label."""
+    # N_years per Jennifer's rule:
+    # Terrorism (ModelCode 1) = 500,000 years
+    # All other perils        = 10,000 years
+    # Do NOT use max(YearID) — it can differ from the true simulation length
+    n_years = N_YEARS  # default 10,000
+    if not df.empty and "ModelCode" in df.columns:
+        first_code = df["ModelCode"].dropna().iloc[0] if not df["ModelCode"].dropna().empty else None
+        if first_code and int(first_code) == 1:  # ModelCode 1 = AIR Terrorism
+            n_years = 500000
+    print(f"  [SOR] N_years: {n_years:,}")
 
-    # Get model label for sheet name and U1 cell
+    # Model label for sheet name and U1
     model_label = ""
     if not df.empty and "ModelCode" in df.columns:
         first_code = df["ModelCode"].dropna().iloc[0] if not df["ModelCode"].dropna().empty else None
@@ -131,39 +108,36 @@ def _build_loss_sheet(wb, df, meta):
 
     sheet_name = (model_label or meta.get("analysis_name", "LossTables"))[:31].strip() or "LossTables"
     ws = wb.create_sheet(title=sheet_name)
-
     last_occ_row = 3 + n_years
 
-    # ── Section headers (row 1) ───────────────────────────────────────────────
+    # ── Section headers row 1 ────────────────────────────────────────────────
     ws["I1"] = "AGG"
     ws["O1"] = "OCC"
     ws["I1"].font = Font(bold=True, size=11, color="1E3A5F")
     ws["O1"].font = Font(bold=True, size=11, color="1E3A5F")
-    if df.empty:
-        ws["U1"] = "No STC events — analysis may use RDS/HIS catalog only"
-    else:
-        ws["U1"] = "=VLOOKUP($F4,ModelCodeRef!$A$3:$E$26,5)"
+    ws["U1"] = "No STC events — analysis may use RDS/HIS catalog only" if df.empty \
+               else "=VLOOKUP($F4,ModelCodeRef!$A$3:$E$26,5)"
     ws["U1"].font = Font(bold=True, size=12, color="1E3A5F")
 
-    # ── Column headers (row 3) ────────────────────────────────────────────────
+    # ── Column headers row 3 ─────────────────────────────────────────────────
     headers = {
         "A3": "CatalogTypeCode", "B3": "EventDescription", "C3": "EventID",
         "D3": "GrossLoss",       "E3": "GroundUpLoss",     "F3": "ModelCode", "G3": "YearID",
         "I3": "Year", "J3": "GULoss", "K3": "GUStdDevSq", "L3": "GRLoss", "M3": "GRStdDevSq",
-        "O3": "Year", "P3": "GURP", "Q3": "GULoss", "R3": "GRRP", "S3": "GRLoss",
+        "O3": "Year", "P3": "GURP",   "Q3": "GULoss",     "R3": "GRRP",   "S3": "GRLoss",
         "U3": "Perspective", "V3": 100, "W3": 250, "X3": 500, "Y3": 1000, "Z3": "AAL", "AA3": "SD",
     }
     for coord, val in headers.items():
         ws[coord] = val
-    _style_header(ws, 3, 1, 7)
-    _style_header(ws, 3, 9, 13)
+    _style_header(ws, 3, 1,  7)
+    _style_header(ws, 3, 9,  13)
     _style_header(ws, 3, 15, 19)
     _style_header(ws, 3, 21, 27)
 
-    # ── Raw STC event rows (columns A-G) ─────────────────────────────────────
-    raw_cols  = ["CatalogTypeCode", "EventDescription", "EventID",
-                 "GrossLoss", "GroundUpLoss", "ModelCode", "YearID"]
-    int_cols  = {"EventID", "ModelCode", "YearID"}
+    # ── Raw STC event rows columns A-G ───────────────────────────────────────
+    raw_cols   = ["CatalogTypeCode", "EventDescription", "EventID",
+                  "GrossLoss", "GroundUpLoss", "ModelCode", "YearID"]
+    int_cols   = {"EventID", "ModelCode", "YearID"}
     float_cols = {"GrossLoss", "GroundUpLoss"}
     if not df.empty:
         for r_idx, row in enumerate(df[raw_cols].itertuples(index=False), start=4):
@@ -176,41 +150,47 @@ def _build_loss_sheet(wb, df, meta):
                     except (ValueError, TypeError): pass
                 ws.cell(row=r_idx, column=c_idx, value=val)
 
-    # ── AGG table — bulk write using append() ─────────────────────────────────
-    # Write year integers as static values — formulas reference column O (OCC Year)
-    # Pre-build all rows as tuples for fast bulk insert
-    agg_rows = []
-    for year in range(1, n_years + 1):
-        r = 3 + year  # row number
-        agg_rows.append((
-            year,                                              # I: Year
-            f"=SUMIFS($E:$E,$G:$G,$O{r})",                   # J: GULoss
-            f"=(J{r}-$Z$4)^2",                                # K: GUStdDevSq
-            f"=SUMIFS($D:$D,$G:$G,$O{r})",                   # L: GRLoss
-            f"=(L{r}-$Z$5)^2",                                # M: GRStdDevSq
-        ))
+    # ── AGG + OCC tables — all 10,000 rows required for formulas to work ────
+    # SUMIFS/MAXIFS/LARGE reference the full column range so every year row
+    # must exist. Years with no events get static 0 in loss cols (fast write).
+    # Years with events get live formulas. Pre-compute all data first.
 
-    # OCC rows
-    occ_rows = []
+    years_with_events = set()
+    if not df.empty and "YearID" in df.columns:
+        years_with_events = set(df["YearID"].dropna().astype(int).unique())
+
     for year in range(1, n_years + 1):
         r = 3 + year
-        occ_rows.append((
-            year,                                                                             # O: Year
-            f"=1/(_xlfn.RANK.EQ(Q{r},$Q$4:$Q${last_occ_row},0)/{n_years})",                 # P: GURP
-            f"=_xlfn.MAXIFS($E:$E,$G:$G,$O{r})",                                            # Q: GULoss
-            f"=1/(_xlfn.RANK.EQ(S{r},$S$4:$S${last_occ_row},0)/{n_years})",                 # R: GRRP
-            f"=_xlfn.MAXIFS(D:D,$G:$G,$O{r})",                                              # S: GRLoss
-        ))
+        if year in years_with_events:
+            # AGG cols I-M: live formulas
+            ws.cell(row=r, column=9,  value=year)
+            ws.cell(row=r, column=10, value=f"=SUMIFS($E:$E,$G:$G,$O{r})")
+            ws.cell(row=r, column=11, value=f"=(J{r}-$Z$4)^2")
+            ws.cell(row=r, column=12, value=f"=SUMIFS($D:$D,$G:$G,$O{r})")
+            ws.cell(row=r, column=13, value=f"=(L{r}-$Z$5)^2")
+            # OCC cols O-S: live formulas
+            ws.cell(row=r, column=15, value=year)
+            ws.cell(row=r, column=16, value=f"=1/(_xlfn.RANK.EQ(Q{r},$Q$4:$Q${last_occ_row},0)/{n_years})")
+            ws.cell(row=r, column=17, value=f"=_xlfn.MAXIFS($E:$E,$G:$G,$O{r})")
+            ws.cell(row=r, column=18, value=f"=1/(_xlfn.RANK.EQ(S{r},$S$4:$S${last_occ_row},0)/{n_years})")
+            ws.cell(row=r, column=19, value=f"=_xlfn.MAXIFS(D:D,$G:$G,$O{r})")
+        else:
+            # Zero-event year — write year integer + static 0 for loss cols
+            # Static values are much faster than formula strings for openpyxl
+            ws.cell(row=r, column=9,  value=year)  # I: Year
+            ws.cell(row=r, column=10, value=0)      # J: GULoss = 0
+            ws.cell(row=r, column=11, value=0)      # K: StdDevSq = 0
+            ws.cell(row=r, column=12, value=0)      # L: GRLoss = 0
+            ws.cell(row=r, column=13, value=0)      # M: StdDevSq = 0
+            ws.cell(row=r, column=15, value=year)   # O: Year
+            ws.cell(row=r, column=16, value=0)      # P: GURP = 0
+            ws.cell(row=r, column=17, value=0)      # Q: GULoss = 0
+            ws.cell(row=r, column=18, value=0)      # R: GRRP = 0
+            ws.cell(row=r, column=19, value=0)      # S: GRLoss = 0
 
-    # Write AGG to cols I-M (9-13) and OCC to cols O-S (15-19) simultaneously
-    for i, (agg_row, occ_row) in enumerate(zip(agg_rows, occ_rows)):
-        r = 4 + i
-        for c_idx, val in enumerate(agg_row, start=9):
-            ws.cell(row=r, column=c_idx, value=val)
-        for c_idx, val in enumerate(occ_row, start=15):
-            ws.cell(row=r, column=c_idx, value=val)
+    print(f"  [SOR] AGG/OCC: {len(years_with_events):,} formula rows + {n_years - len(years_with_events):,} static-zero rows")
 
-    # ── EP/AAL/SD summary (rows 4-5) — LARGE-based ───────────────────────────
+    # ── EP/AAL/SD summary rows 4-5 ───────────────────────────────────────────
     ws["U4"] = "Ground Up"
     ws["U5"] = "Gross"
     rp_ranks = {"V": 100, "W": 40, "X": 20, "Y": 10}
@@ -222,17 +202,15 @@ def _build_loss_sheet(wb, df, meta):
     ws["Z5"]  = f"=SUM($L$4:$L${last_occ_row})/{n_years}"
     ws["AA5"] = f"=SQRT(SUM($M$4:$M${last_occ_row})/({n_years}-1))"
 
-    # ── Top 5 events table (rows 7-12) ───────────────────────────────────────
+    # ── Top 5 events table rows 7-12 ─────────────────────────────────────────
     ws["U7"] = "Loss Exceedance"
     ws["V7"] = "Ground Up"
     ws["W7"] = "Gross"
     ws["X7"] = "Max Affected States"
     _style_header(ws, 7, 21, 24, fill="2E5B9A")
 
-    top5_levels = [10000, 5000, 10000/3, 2500, 2000]
-    top5_ranks  = [1, 2, 3, 4, 5]
     thin = _thin()
-    for i, (level, rank) in enumerate(zip(top5_levels, top5_ranks)):
+    for i, (level, rank) in enumerate(zip([10000, 5000, 10000/3, 2500, 2000], [1,2,3,4,5])):
         r = 8 + i
         ws.cell(row=r, column=21, value=level)
         ws.cell(row=r, column=22, value=f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)")
@@ -243,28 +221,22 @@ def _build_loss_sheet(wb, df, meta):
             ws.cell(row=r, column=col).font   = Font(name="Calibri", size=9)
 
     # ── Column widths ─────────────────────────────────────────────────────────
-    widths = {"A": 14, "B": 50, "C": 10, "D": 14, "E": 14, "F": 10, "G": 9,
-              "I": 8,  "J": 14, "K": 16, "L": 14, "M": 16,
-              "O": 8,  "P": 12, "Q": 14, "R": 12, "S": 14,
-              "U": 16, "V": 14, "W": 14, "X": 14, "Y": 14, "Z": 14, "AA": 14,
-              "X": 80}
-    for col, width in widths.items():
+    for col, width in {"A":14,"B":50,"C":10,"D":14,"E":14,"F":10,"G":9,
+                        "I":8,"J":14,"K":16,"L":14,"M":16,
+                        "O":8,"P":12,"Q":14,"R":12,"S":14,
+                        "U":16,"V":14,"W":14,"X":80,"Y":14,"Z":14,"AA":14}.items():
         ws.column_dimensions[col].width = width
     ws.freeze_panes = "A4"
-
     return ws
 
 
 def build_sor_report(meta, df_elt):
     """Single-analysis SOR report. Returns BytesIO."""
     df = _prepare_df(df_elt)
-
     wb = Workbook()
-    wb.remove(wb.active)  # remove default sheet
-
+    wb.remove(wb.active)
     _build_loss_sheet(wb, df, meta)
     _add_model_code_ref(wb)
-
     output = BytesIO()
     wb.save(output)
     output.seek(0)
@@ -272,23 +244,15 @@ def build_sor_report(meta, df_elt):
 
 
 def build_combined_sor_report(meta, analyses):
-    """
-    Multi-analysis combined workbook — one sheet per analysis.
-    analyses: list of {sid, name, type, df, sheet_name}
-    """
+    """Multi-analysis combined workbook — one sheet per analysis."""
     wb = Workbook()
-
-    # Remove default sheet — sheets are added per analysis below
     wb.remove(wb.active)
-
     for analysis in analyses:
-        sid    = analysis["sid"]
-        atype  = analysis["type"]
-        sname  = analysis.get("sheet_name", f"{atype}-{sid}")
+        sid   = analysis["sid"]
+        atype = analysis["type"]
+        sname = analysis.get("sheet_name", f"{atype}-{sid}")
         df_raw = analysis.get("df")
-
         if atype == "LOSS":
-            # df already prepared by server.py fetch thread — pass directly
             df = df_raw if isinstance(df_raw, pd.DataFrame) else pd.DataFrame()
             _build_loss_sheet(wb, df, {**meta, "analysis_sid": sid,
                                         "analysis_name": analysis.get("name", sname)})
@@ -296,9 +260,7 @@ def build_combined_sor_report(meta, analyses):
             ws_haz = wb.create_sheet(title=sname[:31])
             ws_haz["A1"] = f"Hazard Analysis — SID {sid}"
             ws_haz["A1"].font = Font(name="Calibri", bold=True, size=14, color="1E3A5F")
-
     _add_model_code_ref(wb)
-
     output = BytesIO()
     wb.save(output)
     output.seek(0)
