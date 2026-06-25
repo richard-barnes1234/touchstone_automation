@@ -141,40 +141,45 @@ def _build_loss_sheet(wb, df, meta):
                     except (ValueError, TypeError): pass
                 ws.cell(row=r_idx, column=c_idx, value=val)
 
-    # ── AGG + OCC tables — fast write using direct cell assignment ───────────
-    # Only write years that have events — SUMIFS/MAXIFS return 0 for missing years
-    # which is correct. This skips ~80% of rows for typical analyses.
-    # Use ws._cells direct assignment to bypass openpyxl property overhead.
-    from openpyxl.cell.cell import Cell
+    # ── AGG + OCC tables — all 10,000 rows required for formulas to work ────
+    # SUMIFS/MAXIFS/LARGE reference the full column range so every year row
+    # must exist. Years with no events get static 0 in loss cols (fast write).
+    # Years with events get live formulas. Pre-compute all data first.
 
     years_with_events = set()
     if not df.empty and "YearID" in df.columns:
         years_with_events = set(df["YearID"].dropna().astype(int).unique())
 
-    written = 0
-    for year in sorted(years_with_events):
-        if year < 1 or year > n_years:
-            continue
+    for year in range(1, n_years + 1):
         r = 3 + year
+        if year in years_with_events:
+            # AGG cols I-M: live formulas
+            ws.cell(row=r, column=9,  value=year)
+            ws.cell(row=r, column=10, value=f"=SUMIFS($E:$E,$G:$G,$O{r})")
+            ws.cell(row=r, column=11, value=f"=(J{r}-$Z$4)^2")
+            ws.cell(row=r, column=12, value=f"=SUMIFS($D:$D,$G:$G,$O{r})")
+            ws.cell(row=r, column=13, value=f"=(L{r}-$Z$5)^2")
+            # OCC cols O-S: live formulas
+            ws.cell(row=r, column=15, value=year)
+            ws.cell(row=r, column=16, value=f"=1/(_xlfn.RANK.EQ(Q{r},$Q$4:$Q${last_occ_row},0)/{n_years})")
+            ws.cell(row=r, column=17, value=f"=_xlfn.MAXIFS($E:$E,$G:$G,$O{r})")
+            ws.cell(row=r, column=18, value=f"=1/(_xlfn.RANK.EQ(S{r},$S$4:$S${last_occ_row},0)/{n_years})")
+            ws.cell(row=r, column=19, value=f"=_xlfn.MAXIFS(D:D,$G:$G,$O{r})")
+        else:
+            # Zero-event year — write year integer + static 0 for loss cols
+            # Static values are much faster than formula strings for openpyxl
+            ws.cell(row=r, column=9,  value=year)  # I: Year
+            ws.cell(row=r, column=10, value=0)      # J: GULoss = 0
+            ws.cell(row=r, column=11, value=0)      # K: StdDevSq = 0
+            ws.cell(row=r, column=12, value=0)      # L: GRLoss = 0
+            ws.cell(row=r, column=13, value=0)      # M: StdDevSq = 0
+            ws.cell(row=r, column=15, value=year)   # O: Year
+            ws.cell(row=r, column=16, value=0)      # P: GURP = 0
+            ws.cell(row=r, column=17, value=0)      # Q: GULoss = 0
+            ws.cell(row=r, column=18, value=0)      # R: GRRP = 0
+            ws.cell(row=r, column=19, value=0)      # S: GRLoss = 0
 
-        # Pre-build all values for this row
-        row_data = {
-            9:  year,
-            10: f"=SUMIFS($E:$E,$G:$G,$O{r})",
-            11: f"=(J{r}-$Z$4)^2",
-            12: f"=SUMIFS($D:$D,$G:$G,$O{r})",
-            13: f"=(L{r}-$Z$5)^2",
-            15: year,
-            16: f"=1/(_xlfn.RANK.EQ(Q{r},$Q$4:$Q${last_occ_row},0)/{n_years})",
-            17: f"=_xlfn.MAXIFS($E:$E,$G:$G,$O{r})",
-            18: f"=1/(_xlfn.RANK.EQ(S{r},$S$4:$S${last_occ_row},0)/{n_years})",
-            19: f"=_xlfn.MAXIFS(D:D,$G:$G,$O{r})",
-        }
-        for col, val in row_data.items():
-            ws.cell(row=r, column=col, value=val)
-        written += 1
-
-    print(f"  [SOR] Wrote {written:,} AGG/OCC rows (skipped {n_years - written:,} zero-event years)")
+    print(f"  [SOR] AGG/OCC: {len(years_with_events):,} formula rows + {n_years - len(years_with_events):,} static-zero rows")
 
     # ── EP/AAL/SD summary rows 4-5 ───────────────────────────────────────────
     ws["U4"] = "Ground Up"
