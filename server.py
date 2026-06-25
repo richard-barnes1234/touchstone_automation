@@ -264,7 +264,6 @@ def api_download():
 @app.route("/api/download/combined", methods=["POST"])
 def api_download_combined():
     try:
-        import concurrent.futures
         import traceback
 
         body          = request.json
@@ -274,54 +273,9 @@ def api_download_combined():
         if not analysis_list:
             return jsonify({"ok": False, "error": "No analyses provided"}), 400
 
-        from sor_report_builder import build_combined_sor_report
+        from sor_report_builder import build_combined_sor_report, _prepare_df
         from touchstone_client import get_all_loss_data, get_hazard_results
 
-        # ── Fetch all ELTs in parallel ────────────────────────────────────────
-        def fetch_analysis(a):
-            """Fetch one analysis — runs in a thread."""
-            sid   = int(a["sid"])
-            atype = a["type"]
-            name  = a.get("name", f"{atype}-{sid}")
-            try:
-                if atype == "LOSS":
-                    from sor_report_builder import _prepare_df
-                    results = get_all_loss_data(sid)
-                    df_elt  = results.get("ELT", pd.DataFrame())
-                    df      = _prepare_df(df_elt)  # filter STC, coerce types, normalise cols
-                    model_label = ""
-                    if not df.empty and "ModelCode" in df.columns:
-                        first_code = df["ModelCode"].dropna().iloc[0] \
-                            if not df["ModelCode"].dropna().empty else None
-                        if first_code:
-                            model_label = get_model_description(first_code)
-                    return {"sid": sid, "name": name, "type": atype,
-                            "df": df, "model_label": model_label, "order": a.get("_order", 0)}
-                elif atype == "HAZ":
-                    haz_data = get_hazard_results(sid)
-                    return {"sid": sid, "name": name, "type": atype,
-                            "df": haz_data, "model_label": "", "order": a.get("_order", 0)}
-            except Exception as e:
-                traceback.print_exc()
-                return {"sid": sid, "name": name, "type": atype,
-                        "df": pd.DataFrame(), "model_label": "", "order": a.get("_order", 0),
-                        "error": str(e)}
-
-        # Tag each analysis with its original order so we preserve sequence
-        for i, a in enumerate(analysis_list):
-            a["_order"] = i
-
-        max_workers = min(len(analysis_list), 6)  # cap at 6 — avoid overwhelming the API
-        print(f"  [Combined] Fetching {len(analysis_list)} analyses with {max_workers} threads...")
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as ex:
-            futures  = [ex.submit(fetch_analysis, a) for a in analysis_list]
-            fetched  = [f.result() for f in concurrent.futures.as_completed(futures)]
-
-        # Sort back to original order
-        fetched.sort(key=lambda x: x["order"])
-
-        # ── Assign unique sheet names ─────────────────────────────────────────
         used_names = set()
 
         def unique_name(base):
@@ -335,16 +289,34 @@ def api_download_combined():
             return name
 
         enriched = []
-        for item in fetched:
-            if item["type"] == "LOSS":
-                sheet_name = unique_name(item["model_label"] or item["name"] or f"LOSS-{item['sid']}")
-            else:
-                sheet_name = unique_name(f"HAZ {item['sid']}")
-            enriched.append({**item, "sheet_name": sheet_name})
+        for a in analysis_list:
+            sid   = int(a["sid"])
+            atype = a["type"]
+            name  = a.get("name", f"{atype}-{sid}")
+
+            if atype == "LOSS":
+                results     = get_all_loss_data(sid)
+                df_elt      = results.get("ELT", pd.DataFrame())
+                df          = _prepare_df(df_elt)
+                model_label = ""
+                if not df.empty and "ModelCode" in df.columns:
+                    first_code = df["ModelCode"].dropna().iloc[0] \
+                        if not df["ModelCode"].dropna().empty else None
+                    if first_code:
+                        model_label = get_model_description(first_code)
+                sheet_name = unique_name(model_label or name or f"LOSS-{sid}")
+                enriched.append({"sid": sid, "name": name, "type": atype,
+                                  "df": df, "sheet_name": sheet_name})
+            elif atype == "HAZ":
+                haz_data   = get_hazard_results(sid)
+                sheet_name = unique_name(f"HAZ {sid}")
+                enriched.append({"sid": sid, "name": name, "type": atype,
+                                  "df": haz_data, "sheet_name": sheet_name})
 
         excel_file = build_combined_sor_report(meta, enriched)
 
-        project  = "".join(c for c in meta.get("project_name", "Combined") if c.isalnum() or c in " _-").strip()
+        project  = "".join(c for c in meta.get("project_name", "Combined")
+                           if c.isalnum() or c in " _-").strip()
         filename = f"{project} Combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
 
         return send_file(
