@@ -137,6 +137,8 @@ def _build_loss_sheet(wb, df, meta):
     # ── Raw STC event rows columns A-G ───────────────────────────────────────
     raw_cols   = ["CatalogTypeCode", "EventDescription", "EventID",
                   "GrossLoss", "GroundUpLoss", "ModelCode", "YearID"]
+    # Only keep columns that actually exist in the dataframe
+    raw_cols   = [c for c in raw_cols if c in df.columns]
     int_cols   = {"EventID", "ModelCode", "YearID"}
     float_cols = {"GrossLoss", "GroundUpLoss"}
     if not df.empty:
@@ -158,6 +160,9 @@ def _build_loss_sheet(wb, df, meta):
     years_with_events = set()
     if not df.empty and "YearID" in df.columns:
         years_with_events = set(df["YearID"].dropna().astype(int).unique())
+    print(f"  [SOR] years_with_events count: {len(years_with_events)}")
+    print(f"  [SOR] Sample years: {sorted(list(years_with_events))[:5]}")
+    print(f"  [SOR] raw_cols being written: {raw_cols}")
 
     for year in range(1, n_years + 1):
         r = 3 + year
