@@ -85,7 +85,7 @@ def get_all_loss_data(analysis_sid):
         r = send_soap_request(get_loss_analysis_event_results(BUSINESS_UNIT_SID, SQL_INSTANCE_SID, analysis_sid))
         df_elt = _parse(r.text, 'EventLoss') if r.status_code == 200 else pd.DataFrame()
         results['ELT'] = enrich_with_model(df_elt)
-        print(f"    ELT columns: {list(results['ELT'].columns[:5])}")
+        print(f"    ELT columns: {list(results['ELT'].columns)}")
     except Exception as e:
         print(f"    ELT error: {e}")
         results['ELT'] = pd.DataFrame()
