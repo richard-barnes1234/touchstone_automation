@@ -195,33 +195,82 @@ def _build_loss_sheet(wb, df, meta):
 
     print(f"  [SOR] AGG/OCC: {len(years_with_events):,} formula rows + {n_years - len(years_with_events):,} static-zero rows")
 
-    # ── EP/AAL/SD summary rows 4-5 ───────────────────────────────────────────
-    ws["U4"] = "Ground Up"
-    ws["U5"] = "Gross"
-    rp_ranks = {"V": 100, "W": 40, "X": 20, "Y": 10}
-    for rp_letter, rank in rp_ranks.items():
-        ws[f"{rp_letter}4"] = f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)"
-        ws[f"{rp_letter}5"] = f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)"
-    ws["Z4"]  = f"=SUM($J$4:$J${last_occ_row})/{n_years}"
-    ws["AA4"] = f"=SQRT(SUM($K$4:$K${last_occ_row})/({n_years}-1))"
-    ws["Z5"]  = f"=SUM($L$4:$L${last_occ_row})/{n_years}"
-    ws["AA5"] = f"=SQRT(SUM($M$4:$M${last_occ_row})/({n_years}-1))"
+    # ── EP/AAL/SD summary rows 4-7 — matching Touchstone layout ─────────────
+    # Row 4: AGG Ground Up  (LARGE from col J — aggregate GU per year)
+    # Row 5: AGG Gross      (LARGE from col L — aggregate GR per year)
+    # Row 6: OCC Ground Up  (LARGE from col Q — occurrence GU per year)
+    # Row 7: OCC Gross      (LARGE from col S — occurrence GR per year)
+    ws["T4"] = "Agg/Occ"
+    ws["U4"] = "Perspective"
+    ws["T5"] = "AGG"
+    ws["U5"] = "Ground Up"
+    ws["T6"] = ""
+    ws["U6"] = "Gross"
+    ws["T7"] = "OCC"
+    ws["U7"] = "Ground Up"
+    ws["T8"] = ""
+    ws["U8"] = "Gross"
 
-    # ── Top 5 events table rows 7-12 ─────────────────────────────────────────
-    ws["U7"] = "Loss Exceedance"
-    ws["V7"] = "Ground Up"
-    ws["W7"] = "Gross"
-    ws["X7"] = "Max Affected States"
-    _style_header(ws, 7, 21, 24, fill="2E5B9A")
+    # Style labels
+    for r in [4, 5, 6, 7, 8]:
+        for c in [20, 21]:  # T and U
+            cell = ws.cell(row=r, column=c)
+            cell.font   = Font(name="Calibri", bold=True, size=9, color="FFFFFF")
+            cell.fill   = PatternFill("solid", fgColor="1E3A5F" if r in [4,5,6] else "2E5B9A")
+            cell.border = _thin()
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # Column headers row 4
+    ws["V3"] = 100
+    ws["W3"] = 250
+    ws["X3"] = 500
+    ws["Y3"] = 1000
+    ws["Z3"] = "AAL"
+    ws["AA3"] = "SD"
+    _style_header(ws, 3, 22, 27)  # V-AA headers
+
+    # Return period ranks: 100yr=100th, 250yr=40th, 500yr=20th, 1000yr=10th
+    rp_ranks = {"V": 100, "W": 40, "X": 20, "Y": 10}
+
+    # AGG Ground Up — LARGE from col J
+    for rp_letter, rank in rp_ranks.items():
+        ws[f"{rp_letter}5"] = f"=IFERROR(LARGE($J$4:$J${last_occ_row},{rank}),0)"
+    ws["Z5"]  = f"=SUM($J$4:$J${last_occ_row})/{n_years}"
+    ws["AA5"] = f"=SQRT(SUM($K$4:$K${last_occ_row})/({n_years}-1))"
+
+    # AGG Gross — LARGE from col L
+    for rp_letter, rank in rp_ranks.items():
+        ws[f"{rp_letter}6"] = f"=IFERROR(LARGE($L$4:$L${last_occ_row},{rank}),0)"
+    ws["Z6"]  = f"=SUM($L$4:$L${last_occ_row})/{n_years}"
+    ws["AA6"] = f"=SQRT(SUM($M$4:$M${last_occ_row})/({n_years}-1))"
+
+    # OCC Ground Up — LARGE from col Q
+    for rp_letter, rank in rp_ranks.items():
+        ws[f"{rp_letter}7"] = f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)"
+    ws["Z7"]  = f"=SUM($Q$4:$Q${last_occ_row})/{n_years}"
+    ws["AA7"] = f"=SQRT(SUM(($Q$4:$Q${last_occ_row}-$Z$7)^2)/({n_years}-1))"
+
+    # OCC Gross — LARGE from col S
+    for rp_letter, rank in rp_ranks.items():
+        ws[f"{rp_letter}8"] = f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)"
+    ws["Z8"]  = f"=SUM($S$4:$S${last_occ_row})/{n_years}"
+    ws["AA8"] = f"=SQRT(SUM(($S$4:$S${last_occ_row}-$Z$8)^2)/({n_years}-1))"
+
+    # ── Top 5 events table rows 11-16 ────────────────────────────────────────
+    ws["T10"] = "Loss Exceedance"
+    ws["U10"] = "Ground Up"
+    ws["V10"] = "Gross"
+    ws["W10"] = "Max Affected States"
+    _style_header(ws, 10, 20, 23, fill="2E5B9A")
 
     thin = _thin()
     for i, (level, rank) in enumerate(zip([10000, 5000, 10000/3, 2500, 2000], [1,2,3,4,5])):
-        r = 8 + i
-        ws.cell(row=r, column=21, value=level)
-        ws.cell(row=r, column=22, value=f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)")
-        ws.cell(row=r, column=23, value=f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)")
-        ws.cell(row=r, column=24, value=f'=_xlfn.XLOOKUP(V{r},E:E,B:B,"")')
-        for col in range(21, 25):
+        r = 11 + i
+        ws.cell(row=r, column=20, value=level)
+        ws.cell(row=r, column=21, value=f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)")
+        ws.cell(row=r, column=22, value=f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)")
+        ws.cell(row=r, column=23, value=f'=_xlfn.XLOOKUP(U{r},E:E,B:B,"")')
+        for col in range(20, 24):
             ws.cell(row=r, column=col).border = thin
             ws.cell(row=r, column=col).font   = Font(name="Calibri", size=9)
 
@@ -229,7 +278,7 @@ def _build_loss_sheet(wb, df, meta):
     for col, width in {"A":14,"B":50,"C":10,"D":14,"E":14,"F":10,"G":9,
                         "I":8,"J":14,"K":16,"L":14,"M":16,
                         "O":8,"P":12,"Q":14,"R":12,"S":14,
-                        "U":16,"V":14,"W":14,"X":80,"Y":14,"Z":14,"AA":14}.items():
+                        "T":10,"U":14,"V":14,"W":14,"X":80,"Y":14,"Z":14,"AA":14}.items():
         ws.column_dimensions[col].width = width
     ws.freeze_panes = "A4"
     return ws
