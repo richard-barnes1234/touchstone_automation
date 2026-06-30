@@ -1,129 +1,585 @@
-<?xml version="1.0" encoding="utf-8"?>
-<wsdl:definitions name="ServiceFacade" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:i0="http://schemas.air-worldwide.com/ServiceFacade/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://tempuri.org/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/">
-    <wsp:Policy wsu:Id="NET_policy">
-        <wsp:ExactlyOne>
-            <wsp:All>
-                <msb:BinaryEncoding xmlns:msb="http://schemas.microsoft.com/ws/06/2004/mspolicy/netbinary1"/>
-                <http:NegotiateAuthentication xmlns:http="http://schemas.microsoft.com/ws/06/2004/policy/http"/>
-                <sp:TransportBinding xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
-                    <wsp:Policy>
-                        <sp:TransportToken>
-                            <wsp:Policy>
-                                <sp:HttpsToken RequireClientCertificate="false"/>
-                            </wsp:Policy>
-                        </sp:TransportToken>
-                        <sp:AlgorithmSuite>
-                            <wsp:Policy>
-                                <sp:Basic256/>
-                            </wsp:Policy>
-                        </sp:AlgorithmSuite>
-                        <sp:Layout>
-                            <wsp:Policy>
-                                <sp:Strict/>
-                            </wsp:Policy>
-                        </sp:Layout>
-                    </wsp:Policy>
-                </sp:TransportBinding>
-                <wsaw:UsingAddressing/>
-            </wsp:All>
-        </wsp:ExactlyOne>
-    </wsp:Policy>
-    <wsp:Policy wsu:Id="NETgzip_policy">
-        <wsp:ExactlyOne>
-            <wsp:All>
-                <msb:BinaryEncoding xmlns:msb="http://schemas.microsoft.com/ws/06/2004/mspolicy/netbinary1"/>
-                <http:NtlmAuthentication xmlns:http="http://schemas.microsoft.com/ws/06/2004/policy/http"/>
-                <sp:TransportBinding xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
-                    <wsp:Policy>
-                        <sp:TransportToken>
-                            <wsp:Policy>
-                                <sp:HttpsToken RequireClientCertificate="false"/>
-                            </wsp:Policy>
-                        </sp:TransportToken>
-                        <sp:AlgorithmSuite>
-                            <wsp:Policy>
-                                <sp:Basic256/>
-                            </wsp:Policy>
-                        </sp:AlgorithmSuite>
-                        <sp:Layout>
-                            <wsp:Policy>
-                                <sp:Strict/>
-                            </wsp:Policy>
-                        </sp:Layout>
-                    </wsp:Policy>
-                </sp:TransportBinding>
-                <wsaw:UsingAddressing/>
-            </wsp:All>
-        </wsp:ExactlyOne>
-    </wsp:Policy>
-    <wsp:Policy wsu:Id="FEP_policy">
-        <wsp:ExactlyOne>
-            <wsp:All>
-                <http:NegotiateAuthentication xmlns:http="http://schemas.microsoft.com/ws/06/2004/policy/http"/>
-                <sp:TransportBinding xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
-                    <wsp:Policy>
-                        <sp:TransportToken>
-                            <wsp:Policy>
-                                <sp:HttpsToken RequireClientCertificate="false"/>
-                            </wsp:Policy>
-                        </sp:TransportToken>
-                        <sp:AlgorithmSuite>
-                            <wsp:Policy>
-                                <sp:Basic256/>
-                            </wsp:Policy>
-                        </sp:AlgorithmSuite>
-                        <sp:Layout>
-                            <wsp:Policy>
-                                <sp:Strict/>
-                            </wsp:Policy>
-                        </sp:Layout>
-                    </wsp:Policy>
-                </sp:TransportBinding>
-                <wsaw:UsingAddressing/>
-            </wsp:All>
-        </wsp:ExactlyOne>
-    </wsp:Policy>
-    <wsdl:import namespace="http://schemas.air-worldwide.com/ServiceFacade/" location="https://crcins-na-prod-touchstoneapi.air-worldwide.com/FEP/AirServiceFacade.svc?wsdl=wsdl0"/>
-    <wsdl:types/>
-    <wsdl:binding name="NET" type="i0:ServiceFacade">
-        <wsp:PolicyReference URI="#NET_policy"/>
-        <soap12:binding transport="http://schemas.xmlsoap.org/soap/http"/>
-    </wsdl:binding>
-    <wsdl:binding name="NETgzip" type="i0:ServiceFacade">
-        <wsp:PolicyReference URI="#NETgzip_policy"/>
-        <soap12:binding transport="http://schemas.xmlsoap.org/soap/http"/>
-    </wsdl:binding>
-    <wsdl:binding name="FEP" type="i0:ServiceFacade">
-        <wsp:PolicyReference URI="#FEP_policy"/>
-        <soap12:binding transport="http://schemas.xmlsoap.org/soap/http"/>
-    </wsdl:binding>
-    <wsdl:service name="ServiceFacade">
-        <wsdl:port name="NET" binding="tns:NET">
-            <soap12:address location="https://crcins-na-prod-touchstoneapi.air-worldwide.com/FEP/AirServiceFacade.svc/NET"/>
-            <wsa10:EndpointReference>
-                <wsa10:Address>https://crcins-na-prod-touchstoneapi.air-worldwide.com/FEP/AirServiceFacade.svc/NET</wsa10:Address>
-                <Identity xmlns="http://schemas.xmlsoap.org/ws/2006/02/addressingidentity">
-                    <Upn>airservice@crcins.air</Upn>
-                </Identity>
-            </wsa10:EndpointReference>
-        </wsdl:port>
-        <wsdl:port name="NETgzip" binding="tns:NETgzip">
-            <soap12:address location="https://crcins-na-prod-touchstoneapi.air-worldwide.com/FEP/AirServiceFacade.svc/NETgzip"/>
-            <wsa10:EndpointReference>
-                <wsa10:Address>https://crcins-na-prod-touchstoneapi.air-worldwide.com/FEP/AirServiceFacade.svc/NETgzip</wsa10:Address>
-                <Identity xmlns="http://schemas.xmlsoap.org/ws/2006/02/addressingidentity">
-                    <Upn>airservice@crcins.air</Upn>
-                </Identity>
-            </wsa10:EndpointReference>
-        </wsdl:port>
-        <wsdl:port name="FEP" binding="tns:FEP">
-            <soap12:address location="https://crcins-na-prod-touchstoneapi.air-worldwide.com/FEP/AirServiceFacade.svc"/>
-            <wsa10:EndpointReference>
-                <wsa10:Address>https://crcins-na-prod-touchstoneapi.air-worldwide.com/FEP/AirServiceFacade.svc</wsa10:Address>
-                <Identity xmlns="http://schemas.xmlsoap.org/ws/2006/02/addressingidentity">
-                    <Upn>airservice@crcins.air</Upn>
-                </Identity>
-            </wsa10:EndpointReference>
-        </wsdl:port>
-    </wsdl:service>
-</wsdl:definitions>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing">
+    <s:Header>
+        <a:Action s:mustUnderstand="1">AIR.Services.LossAnalysisService.Api/ILossAnalysisService/GetLossAnalysisSummaryResultsResponse</a:Action>
+        <a:RelatesTo>urn:uuid:f23aa50c-9a41-4932-bd0e-51a37913fde4</a:RelatesTo>
+    </s:Header>
+    <s:Body>
+        <GetLossAnalysisSummaryResultsResponse xmlns="AIR.Services.LossAnalysisService.Api">
+            <GetLossAnalysisSummaryResultsResult xmlns:d1p1="AIR.Services.LossAnalysis.Api" xmlns:b="AIR.Services.Common.Api" xmlns:e="AIR.Services.LossAnalysis.Api" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+                <b:Fault i:nil="true" xmlns:d1p1="AIR.Services.Common.Data"/>
+                <b:RequestUid>00000000-0000-0000-0000-000000000000</b:RequestUid>
+                <b:Status xmlns:d1p1="AIR.Services.Common.Data">
+                    <d1p1:Code>Success</d1p1:Code>
+                    <d1p1:Description>Success</d1p1:Description>
+                    <d1p1:Reason>
+                        <d1p1:Code>0</d1p1:Code>
+                        <d1p1:Message/>
+                    </d1p1:Reason>
+                </b:Status>
+                <e:EPCurveInformation xmlns:d1p1="AIR.Services.LossAnalysis.Data">
+                    <d1p1:EP1>0.001</d1p1:EP1>
+                    <d1p1:EP10 i:nil="true"/>
+                    <d1p1:EP11 i:nil="true"/>
+                    <d1p1:EP12 i:nil="true"/>
+                    <d1p1:EP13 i:nil="true"/>
+                    <d1p1:EP14 i:nil="true"/>
+                    <d1p1:EP15 i:nil="true"/>
+                    <d1p1:EP2>0.002</d1p1:EP2>
+                    <d1p1:EP3>0.004</d1p1:EP3>
+                    <d1p1:EP4>0.01</d1p1:EP4>
+                    <d1p1:EP5>0.02</d1p1:EP5>
+                    <d1p1:EP6>0.05</d1p1:EP6>
+                    <d1p1:EP7 i:nil="true"/>
+                    <d1p1:EP8 i:nil="true"/>
+                    <d1p1:EP9 i:nil="true"/>
+                </e:EPCurveInformation>
+                <e:Results xmlns:d1p1="AIR.Services.LossAnalysis.Data">
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>AGG</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>STD</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>0</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>0</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>0</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>0</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>0</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>0</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>EP</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.4197512409865958</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GR</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6117.7616217458408</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>AGG</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>STD</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>0</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>0</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>0</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>0</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>0</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>0</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>EP</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.635278953179915</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GU</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6192.4454429433381</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>AGG</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>STD</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>9419.7512409865958</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>4709.8756204932979</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>2354.937810246649</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>941.97512409865953</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>470.98756204932977</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>188.3950248197319</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>TVAR</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.4197512409865958</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GR</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6117.7616217458408</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>AGG</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>STD</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>9635.2789531799153</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>4817.6394765899577</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>2408.8197382949788</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>963.52789531799147</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>481.76394765899573</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>192.70557906359829</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>TVAR</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.635278953179915</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GU</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6192.4454429433381</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>AGG</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>SUNC</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>0</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>0</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>0</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>0</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>0</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>0</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>EP</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.4197512409866029</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GR</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6287.6203043501055</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>AGG</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>SUNC</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>0</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>0</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>0</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>0</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>0</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>0</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>EP</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.6352789531799221</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GU</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6361.8607103814256</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>AGG</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>SUNC</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>5610.055924787308</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>2805.027962393654</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>1402.513981196827</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>561.00559247873082</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>280.50279623936541</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>112.20111849574616</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>TVAR</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.4197512409866029</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GR</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6287.6203043501055</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>AGG</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>SUNC</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>5774.0148729289485</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>2887.0074364644743</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>1443.5037182322371</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>577.40148729289479</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>288.70074364644739</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>115.48029745857896</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>TVAR</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.6352789531799221</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GU</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6361.8607103814256</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>OCC</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>STD</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>0</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>0</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>0</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>0</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>0</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>0</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>EP</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.4197512409865958</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GR</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6117.7616217458408</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>OCC</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>STD</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>0</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>0</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>0</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>0</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>0</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>0</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>EP</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.635278953179915</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GU</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6192.4454429433381</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>OCC</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>STD</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>9419.7512409865958</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>4709.8756204932979</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>2354.937810246649</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>941.97512409865953</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>470.98756204932977</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>188.3950248197319</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>TVAR</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.4197512409865958</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GR</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6117.7616217458408</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>OCC</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>STD</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>9635.2789531799153</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>4817.6394765899577</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>2408.8197382949788</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>963.52789531799147</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>481.76394765899573</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>192.70557906359829</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>TVAR</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.635278953179915</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GU</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6192.4454429433381</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>OCC</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>SUNC</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>0</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>0</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>0</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>0</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>0</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>0</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>EP</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.4197512409866029</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GR</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6287.6203043501055</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>OCC</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>SUNC</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>0</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>0</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>0</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>0</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>0</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>0</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>EP</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.6352789531799221</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GU</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6361.8607103814256</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>OCC</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>SUNC</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>5610.055924787308</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>2805.027962393654</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>1402.513981196827</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>561.00559247873082</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>280.50279623936541</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>112.20111849574616</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>TVAR</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.4197512409866029</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GR</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6287.6203043501055</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                    <d1p1:SummaryEPDistribution>
+                        <d1p1:AnnualTypeCode>OCC</d1p1:AnnualTypeCode>
+                        <d1p1:CoverageOrInjuryType>Total</d1p1:CoverageOrInjuryType>
+                        <d1p1:CurveTypeCode>SUNC</d1p1:CurveTypeCode>
+                        <d1p1:EP10Loss>0</d1p1:EP10Loss>
+                        <d1p1:EP11Loss>0</d1p1:EP11Loss>
+                        <d1p1:EP12Loss>0</d1p1:EP12Loss>
+                        <d1p1:EP13Loss>0</d1p1:EP13Loss>
+                        <d1p1:EP14Loss>0</d1p1:EP14Loss>
+                        <d1p1:EP15Loss>0</d1p1:EP15Loss>
+                        <d1p1:EP1Loss>5774.0148729289485</d1p1:EP1Loss>
+                        <d1p1:EP2Loss>2887.0074364644743</d1p1:EP2Loss>
+                        <d1p1:EP3Loss>1443.5037182322371</d1p1:EP3Loss>
+                        <d1p1:EP4Loss>577.40148729289479</d1p1:EP4Loss>
+                        <d1p1:EP5Loss>288.70074364644739</d1p1:EP5Loss>
+                        <d1p1:EP6Loss>115.48029745857896</d1p1:EP6Loss>
+                        <d1p1:EP7Loss>0</d1p1:EP7Loss>
+                        <d1p1:EP8Loss>0</d1p1:EP8Loss>
+                        <d1p1:EP9Loss>0</d1p1:EP9Loss>
+                        <d1p1:EPTypeCode>TVAR</d1p1:EPTypeCode>
+                        <d1p1:ExpectedValue>9.6352789531799221</d1p1:ExpectedValue>
+                        <d1p1:ModelCode>-1</d1p1:ModelCode>
+                        <d1p1:PerilCode>-1</d1p1:PerilCode>
+                        <d1p1:Perspective>GU</d1p1:Perspective>
+                        <d1p1:StandardDeviation>6361.8607103814256</d1p1:StandardDeviation>
+                        <d1p1:Target>
+                            <d1p1:DataSourceSid>2</d1p1:DataSourceSid>
+                            <d1p1:DisplayId>Providence_26_EQ_FL_TR</d1p1:DisplayId>
+                            <d1p1:Sid>42209</d1p1:Sid>
+                            <d1p1:TypeCode>CON</d1p1:TypeCode>
+                        </d1p1:Target>
+                        <d1p1:TargetTypeCode i:nil="true"/>
+                        <d1p1:ViewItems>Air</d1p1:ViewItems>
+                    </d1p1:SummaryEPDistribution>
+                </e:Results>
+            </GetLossAnalysisSummaryResultsResult>
+        </GetLossAnalysisSummaryResultsResponse>
+    </s:Body>
+</s:Envelope>
