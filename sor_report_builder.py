@@ -257,6 +257,10 @@ def _build_loss_sheet(wb, df, meta):
     ws["AA8"] = f"=SQRT(SUM(($S$4:$S${last_occ_row}-$Z$8)^2)/({n_years}-1))"
 
     # ── Top 5 events table rows 11-16 ────────────────────────────────────────
+    # Pairs GU and Gross by the SAME YEAR (top 5 years ranked by GU loss) —
+    # NOT by independent rank, which can mismatch events when GU/Gross sort
+    # order differs (confirmed by Jennifer — different deductibles per location
+    # can make a year rank high on GU but not on Gross, or vice versa).
     ws["T10"] = "Loss Exceedance"
     ws["U10"] = "Ground Up"
     ws["V10"] = "Gross"
@@ -264,15 +268,54 @@ def _build_loss_sheet(wb, df, meta):
     _style_header(ws, 10, 20, 23, fill="2E5B9A")
 
     thin = _thin()
-    for i, (level, rank) in enumerate(zip([10000, 5000, 10000/3, 2500, 2000], [1,2,3,4,5])):
+    # Find top 5 years by OCC Ground Up loss (column Q), preserving the
+    # YearID of each so Gross is looked up for that SAME year — not an
+    # independently-ranked Gross value from a potentially different year.
+    if not df.empty and "YearID" in df.columns:
+        occ_by_year = df.groupby("YearID").agg(
+            GUMax=("GroundUpLoss", "max"),
+            GRMax=("GrossLoss", "max"),
+        ).reset_index().sort_values("GUMax", ascending=False).reset_index(drop=True)
+    else:
+        occ_by_year = pd.DataFrame(columns=["YearID", "GUMax", "GRMax"])
+
+    top5_levels = [10000, 5000, 10000/3, 2500, 2000]
+    for i, level in enumerate(top5_levels):
         r = 11 + i
         ws.cell(row=r, column=20, value=level)
-        ws.cell(row=r, column=21, value=f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)")
-        ws.cell(row=r, column=22, value=f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)")
-        ws.cell(row=r, column=23, value=f'=_xlfn.XLOOKUP(U{r},E:E,B:B,"")')
+        if i < len(occ_by_year):
+            year_id = int(occ_by_year.iloc[i]["YearID"])
+            gu_val  = round(occ_by_year.iloc[i]["GUMax"])
+            gr_val  = round(occ_by_year.iloc[i]["GRMax"])
+            ws.cell(row=r, column=21, value=gu_val)
+            ws.cell(row=r, column=22, value=gr_val)
+            # XLOOKUP on the actual YearID — guarantees same-year event match
+            ws.cell(row=r, column=23, value=(
+                f'=_xlfn.XLOOKUP({year_id},$G:$G,$B:$B,"",0,1)'
+            ))
+        else:
+            ws.cell(row=r, column=21, value=0)
+            ws.cell(row=r, column=22, value=0)
+            ws.cell(row=r, column=23, value="")
         for col in range(20, 24):
             ws.cell(row=r, column=col).border = thin
             ws.cell(row=r, column=col).font   = Font(name="Calibri", size=9)
+
+    # ── Apply whole number format to EP summary and Top 5 cells ─────────────
+    for r in range(5, 9):       # EP summary rows 5-8
+        for c in range(22, 28): # cols V-AA
+            ws.cell(row=r, column=c).number_format = "#,##0"
+    for r in range(11, 16):     # Top 5 rows 11-15
+        for c in range(20, 23): # cols T-V
+            ws.cell(row=r, column=c).number_format = "#,##0"
+    # Also format AGG/OCC loss cols J, L, Q, S
+    for r in range(4, last_occ_row + 1):
+        for c in [10, 12, 17, 19]:  # J, L, Q, S
+            ws.cell(row=r, column=c).number_format = "#,##0"
+    # Format raw ELT GrossLoss and GroundUpLoss cols D, E
+    for r in range(4, 4 + len(df)):
+        ws.cell(row=r, column=4).number_format = "#,##0"
+        ws.cell(row=r, column=5).number_format = "#,##0"
 
     # ── Column widths ─────────────────────────────────────────────────────────
     for col, width in {"A":14,"B":50,"C":10,"D":14,"E":14,"F":10,"G":9,
