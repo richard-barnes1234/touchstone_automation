@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1800" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1200" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <!-- ══════════════ CRC HEADER BAR ══════════════ -->
+    <mxCell id="header_bg" value="" style="rounded=0;fillColor=#C8102E;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="0" y="0" width="1900" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="header_logo" value="&lt;b style='font-size:14px;color:#FFFFFF;'&gt;CRC&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px;color:#FFFFFF;'&gt;GROUP&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;fontColor=#FFFFFF;" vertex="1" parent="1">
+      <mxGeometry x="10" y="2" width="60" height="36" as="geometry"/>
+    </mxCell>
+    <mxCell id="header_title" value="&lt;b style='font-size:13px;color:#FFFFFF;'&gt;Infrastructure Blueprint (IBP) with overlaid SBP&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="350" y="2" width="500" height="36" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ METADATA ROW ══════════════ -->
+    <mxCell id="meta_bg" value="" style="rounded=0;fillColor=#F9F8F6;strokeColor=#E2DDD6;strokeWidth=1;" vertex="1" parent="1">
+      <mxGeometry x="0" y="40" width="1900" height="36" as="geometry"/>
+    </mxCell>
+    <mxCell id="meta_text" value="&lt;table style='font-size:10px;width:100%;border-collapse:collapse;'&gt;&lt;tr&gt;&lt;td style='padding:2px 16px;'&gt;&lt;b&gt;Application:&lt;/b&gt; Touchstone AIR Cloud Automation&lt;/td&gt;&lt;td style='padding:2px 16px;'&gt;&lt;b&gt;Tier Rating:&lt;/b&gt; 2&lt;/td&gt;&lt;td style='padding:2px 16px;'&gt;&lt;b&gt;Application Contact:&lt;/b&gt; Richard Barnes&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style='padding:2px 16px;'&gt;&lt;b&gt;App ID:&lt;/b&gt; TBD&lt;/td&gt;&lt;td style='padding:2px 16px;'&gt;&lt;b&gt;Data Classification:&lt;/b&gt; Class 1&lt;/td&gt;&lt;td style='padding:2px 16px;'&gt;&lt;b&gt;Cyber Security Reviewer:&lt;/b&gt; TBD&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="0" y="40" width="1100" height="36" as="geometry"/>
+    </mxCell>
+    <mxCell id="meta_right" value="&lt;span style='font-size:10px;'&gt;&lt;b&gt;Logical Environment:&lt;/b&gt; EA/US 2 &amp;nbsp;&amp;nbsp; &lt;b&gt;Last Updated:&lt;/b&gt; June 26, 2026&lt;/span&gt;" style="text;html=1;align=right;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="1100" y="40" width="400" height="36" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ KEY / LEGEND ══════════════ -->
+    <mxCell id="key_bg" value="" style="rounded=1;fillColor=#FFFFFF;strokeColor=#CCCCCC;strokeWidth=1;" vertex="1" parent="1">
+      <mxGeometry x="450" y="85" width="560" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="key_title" value="Key" style="text;html=1;fontStyle=1;fontSize=11;align=left;" vertex="1" parent="1">
+      <mxGeometry x="460" y="88" width="60" height="18" as="geometry"/>
+    </mxCell>
+    <mxCell id="key_sec" value="Security Controls" style="rounded=1;fillColor=#FFFFFF;strokeColor=#9B30FF;strokeWidth=2;fontSize=9;align=center;" vertex="1" parent="1">
+      <mxGeometry x="460" y="108" width="110" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="key_new" value="New / Updated Component" style="rounded=1;fillColor=#00CC00;strokeColor=#007700;fontColor=#FFFFFF;fontSize=9;align=center;" vertex="1" parent="1">
+      <mxGeometry x="580" y="108" width="130" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="key_existing" value="Existing Component" style="rounded=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=9;align=center;" vertex="1" parent="1">
+      <mxGeometry x="720" y="108" width="110" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="key_flow" value="→ Connection / Data Flow" style="text;html=1;fontSize=9;align=left;" vertex="1" parent="1">
+      <mxGeometry x="840" y="108" width="150" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="key_encrypt" value="→ Encrypted Data Flow" style="text;html=1;fontSize=9;align=left;fontColor=#CC0000;" vertex="1" parent="1">
+      <mxGeometry x="840" y="132" width="150" height="16" as="geometry"/>
+    </mxCell>
+    <mxCell id="key_mtls" value="→ Mutual TLS" style="text;html=1;fontSize=9;align=left;fontColor=#0066CC;" vertex="1" parent="1">
+      <mxGeometry x="460" y="132" width="100" height="16" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ SECURITY QUESTIONNAIRE ══════════════ -->
+    <mxCell id="secq_bg" value="" style="rounded=1;fillColor=#9B7FD4;strokeColor=#6B4FA4;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="1530" y="85" width="360" height="200" as="geometry"/>
+    </mxCell>
+    <mxCell id="secq_text" value="&lt;b style='font-size:13px;color:#FFFFFF;'&gt;Security (word Questionnaire)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style='font-size:10px;color:#FFFFFF;'&gt;By completing the security information in the Infrastructure Blueprint, you're setting your application up for success.&lt;br&gt;&lt;br&gt;• Uncover and address potential vulnerabilities early, saving time and resources later.&lt;br&gt;• Clearly define data access and handling practices to simplify troubleshooting and scaling.&lt;br&gt;• Show stakeholders your commitment to protecting data and maintaining compliance.&lt;br&gt;&lt;br&gt;[Click on the Security Info Instructions Tab for Instructions and Examples]&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=8;" vertex="1" parent="1">
+      <mxGeometry x="1530" y="85" width="360" height="200" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ MAIN DIAGRAM AREA - ZONE BACKGROUNDS ══════════════ -->
+
+    <!-- Internet Zone -->
+    <mxCell id="z_internet" value="&lt;b&gt;Internet Zone&lt;/b&gt;" style="rounded=1;fillColor=#FFE8E8;strokeColor=#CC0000;strokeWidth=3;verticalAlign=top;fontSize=12;fontStyle=1;fontColor=#CC0000;" vertex="1" parent="1">
+      <mxGeometry x="20" y="295" width="140" height="460" as="geometry"/>
+    </mxCell>
+
+    <!-- Business Partners -->
+    <mxCell id="z_biz" value="&lt;b&gt;Business Partners&lt;/b&gt;" style="rounded=1;fillColor=#FFE8E8;strokeColor=#CC0000;strokeWidth=3;verticalAlign=top;fontSize=12;fontStyle=1;fontColor=#CC0000;" vertex="1" parent="1">
+      <mxGeometry x="170" y="295" width="160" height="460" as="geometry"/>
+    </mxCell>
+
+    <!-- DMZ / MZ -->
+    <mxCell id="z_dmz" value="&lt;b&gt;DMZ / MZ&lt;/b&gt;" style="rounded=1;fillColor=#FFF8E8;strokeColor=#FF9900;strokeWidth=3;verticalAlign=top;fontSize=12;fontStyle=1;fontColor=#CC6600;" vertex="1" parent="1">
+      <mxGeometry x="340" y="295" width="200" height="460" as="geometry"/>
+    </mxCell>
+
+    <!-- Core Connectivity Zone -->
+    <mxCell id="z_core" value="&lt;b&gt;Core Connectivity Zone&lt;/b&gt;" style="rounded=1;fillColor=#FFF8E8;strokeColor=#FF9900;strokeWidth=3;verticalAlign=top;fontSize=12;fontStyle=1;fontColor=#CC6600;" vertex="1" parent="1">
+      <mxGeometry x="550" y="295" width="180" height="460" as="geometry"/>
+    </mxCell>
+
+    <!-- Internal Zone -->
+    <mxCell id="z_internal" value="&lt;b&gt;Internal Zone&lt;/b&gt;" style="rounded=1;fillColor=#E8F8E8;strokeColor=#007700;strokeWidth=3;verticalAlign=top;fontSize=12;fontStyle=1;fontColor=#007700;" vertex="1" parent="1">
+      <mxGeometry x="740" y="295" width="740" height="460" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ INTERNET ZONE COMPONENTS ══════════════ -->
+    <mxCell id="crc_users" value="&lt;b&gt;CRC Group Users&lt;/b&gt;&lt;br&gt;👤👤&lt;br&gt;&lt;span style='font-size:9px;'&gt;Cat Modeling Analysts&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CC0000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="35" y="340" width="110" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="mfa_int" value="&lt;b&gt;MFA&lt;/b&gt;&lt;br&gt;🔐&lt;br&gt;&lt;span style='font-size:9px;'&gt;Entra ID&lt;br&gt;(pending IT)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CC0000;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="35" y="450" width="110" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="managed_device" value="&lt;b&gt;Managed Laptop&lt;/b&gt;&lt;br&gt;💻&lt;br&gt;&lt;span style='font-size:9px;'&gt;Chrome / Edge&lt;br&gt;CRC-managed device&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CC0000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="35" y="560" width="110" height="70" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ BUSINESS PARTNERS (Touchstone as partner) ══════════════ -->
+    <mxCell id="air_partner" value="&lt;b&gt;AIR Worldwide&lt;/b&gt;&lt;br&gt;☁️&lt;br&gt;&lt;span style='font-size:9px;'&gt;SaaS Partner&lt;br&gt;Touchstone API&lt;br&gt;SOAP 1.2 / HTTPS&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8FFE8;strokeColor=#007700;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="185" y="360" width="130" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="air_note" value="&lt;span style='font-size:9px;'&gt;crcins-na-prod-touchstoneapi&lt;br&gt;.air-worldwide.com&lt;br&gt;NTLM authentication&lt;br&gt;SSL verify=False ⚠️&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#D97706;fontSize=9;" vertex="1" parent="1">
+      <mxGeometry x="183" y="460" width="134" height="70" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ DMZ / MZ ══════════════ -->
+    <mxCell id="corp_firewall" value="&lt;b&gt;Corporate Firewall&lt;/b&gt;&lt;br&gt;🛡️&lt;br&gt;&lt;span style='font-size:9px;'&gt;HTTPS outbound only&lt;br&gt;NTLM traffic allowed&lt;br&gt;CRC Corporate Network&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="355" y="360" width="165" height="90" as="geometry"/>
+    </mxCell>
+    <mxCell id="zscaler" value="&lt;b&gt;Z-Scaler / WAF&lt;/b&gt;&lt;br&gt;🔒&lt;br&gt;&lt;span style='font-size:9px;'&gt;Web Application Firewall&lt;br&gt;DDoS protection&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="355" y="480" width="165" height="70" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ CORE CONNECTIVITY ZONE ══════════════ -->
+    <mxCell id="dns" value="&lt;b&gt;DNS Zones&lt;/b&gt;&lt;br&gt;🌐&lt;br&gt;&lt;span style='font-size:9px;'&gt;Azure Private DNS&lt;br&gt;Name resolution&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#1E3A5F;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="562" y="360" width="150" height="75" as="geometry"/>
+    </mxCell>
+    <mxCell id="vnet_peer" value="&lt;b&gt;VNet Peering&lt;/b&gt;&lt;br&gt;🔗&lt;br&gt;&lt;span style='font-size:9px;'&gt;Hub-spoke topology&lt;br&gt;Secure transit&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#1E3A5F;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="562" y="460" width="150" height="75" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ INTERNAL ZONE - AZURE SUBSCRIPTION ══════════════ -->
+    <!-- Subscription box -->
+    <mxCell id="subscription_bg" value="&lt;b style='font-size:10px;'&gt;Azure Subscription — Touchstone Automation&lt;/b&gt;" style="rounded=1;fillColor=#F0F4FF;strokeColor=#2E5B9A;strokeWidth=2;verticalAlign=top;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="755" y="315" width="710" height="420" as="geometry"/>
+    </mxCell>
+
+    <!-- Azure VNet -->
+    <mxCell id="vnet" value="&lt;b&gt;Azure VNet&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px;'&gt;vnet-touchstone-prod&lt;/span&gt;" style="rounded=1;fillColor=#DBEAFE;strokeColor=#1E3A5F;strokeWidth=2;verticalAlign=top;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="768" y="345" width="440" height="370" as="geometry"/>
+    </mxCell>
+
+    <!-- App Service -->
+    <mxCell id="app_service" value="&lt;b&gt;Azure App Service&lt;/b&gt; 🟢&lt;br&gt;&lt;span style='font-size:9px;'&gt;Premium V2 P1v2 / Python 3.12&lt;br&gt;Flask + Gunicorn&lt;br&gt;TLS termination native&lt;br&gt;HTTPS only — port 443&lt;br&gt;Serves SPA + REST API&lt;br&gt;AUTO-SCALE capable&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00CC00;strokeColor=#007700;fontColor=#FFFFFF;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="780" y="380" width="160" height="120" as="geometry"/>
+    </mxCell>
+
+    <!-- NSG -->
+    <mxCell id="nsg" value="&lt;b&gt;NSG&lt;/b&gt;&lt;br&gt;🛡️&lt;br&gt;&lt;span style='font-size:9px;'&gt;Network Security Group&lt;br&gt;Inbound: 443 only&lt;br&gt;Outbound: HTTPS, NTLM&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#1E3A5F;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="780" y="520" width="160" height="80" as="geometry"/>
+    </mxCell>
+
+    <!-- Key Vault -->
+    <mxCell id="kv" value="&lt;b&gt;Azure Key Vault&lt;/b&gt; 🟡&lt;br&gt;&lt;span style='font-size:9px;'&gt;Service account credentials&lt;br&gt;automation-dev / UAT / prod&lt;br&gt;Replaces env vars in prod&lt;br&gt;(pending IT approval)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="960" y="380" width="160" height="90" as="geometry"/>
+    </mxCell>
+
+    <!-- Entra ID -->
+    <mxCell id="entra" value="&lt;b&gt;Entra ID (AAD)&lt;/b&gt; 🟡&lt;br&gt;&lt;span style='font-size:9px;'&gt;SSO / OAuth2 / OIDC&lt;br&gt;CRC corporate identity&lt;br&gt;(pending IT App Registration)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="960" y="490" width="160" height="80" as="geometry"/>
+    </mxCell>
+
+    <!-- App Insights -->
+    <mxCell id="appinsights" value="&lt;b&gt;App Insights&lt;/b&gt; 🟡&lt;br&gt;&lt;span style='font-size:9px;'&gt;Monitoring &amp;amp; alerting&lt;br&gt;API failure tracking&lt;br&gt;(pending)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="960" y="590" width="160" height="70" as="geometry"/>
+    </mxCell>
+
+    <!-- Microsoft 365 -->
+    <mxCell id="m365" value="&lt;b&gt;Microsoft 365&lt;/b&gt;&lt;br&gt;☁️&lt;br&gt;&lt;span style='font-size:9px;'&gt;Analyst browsers&lt;br&gt;Managed device access&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#1E3A5F;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1160" y="355" width="130" height="80" as="geometry"/>
+    </mxCell>
+
+    <!-- Core Functions -->
+    <mxCell id="corefx" value="&lt;b&gt;Core Functions — Enterprise&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px;'&gt;🔑 Azure Sentinel &nbsp; 🏆 Log Analytics&lt;br&gt;📋 Log Prometheus &nbsp; 🔐 AAD Identity&lt;br&gt;📊 AppGateway Diagnostic&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE9FE;strokeColor=#7C3AED;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1160" y="460" width="275" height="80" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ RIGHT PANELS ══════════════ -->
+    <!-- DATA -->
+    <mxCell id="panel_data_hdr" value="DATA" style="rounded=1;fillColor=#9B7FD4;strokeColor=#6B4FA4;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="1530" y="295" width="360" height="36" as="geometry"/>
+    </mxCell>
+    <mxCell id="panel_data_body" value="&lt;span style='font-size:10px;'&gt;• ELT, EP Curves, Loss Summary, HAZ results from Touchstone API (read-only, no write-back)&lt;br&gt;• Excel (.xlsx) SOR reports generated in-memory and served as direct analyst browser downloads&lt;br&gt;• No output files persisted server-side — reports are ephemeral&lt;br&gt;• API audit log written to disk: logs/touchstone_api_audit.log&lt;br&gt;• Data classification: Class 1 — catastrophe modeling loss data, internal CRC use only&lt;br&gt;• No PII or sensitive personal data processed&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3EFFF;strokeColor=#9B7FD4;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+      <mxGeometry x="1530" y="331" width="360" height="130" as="geometry"/>
+    </mxCell>
+
+    <!-- ACCESS -->
+    <mxCell id="panel_access_hdr" value="ACCESS" style="rounded=1;fillColor=#9B7FD4;strokeColor=#6B4FA4;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="1530" y="471" width="360" height="36" as="geometry"/>
+    </mxCell>
+    <mxCell id="panel_access_body" value="&lt;span style='font-size:10px;'&gt;• Analysts access via managed browser — HTTPS only&lt;br&gt;• Entra ID SSO planned (pending IT App Registration)&lt;br&gt;• 3 NTLM service accounts (domain: crcins.air):&lt;br&gt;&nbsp;&nbsp;— automation-dev (DEV environment)&lt;br&gt;&nbsp;&nbsp;— automationservice (UAT environment)&lt;br&gt;&nbsp;&nbsp;— automation-prod (PROD environment)&lt;br&gt;• APP_ENV variable controls which account is active&lt;br&gt;• All API calls audit logged with account, timestamp, duration&lt;br&gt;• Credentials stored in Azure Key Vault (prod)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3EFFF;strokeColor=#9B7FD4;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+      <mxGeometry x="1530" y="507" width="360" height="160" as="geometry"/>
+    </mxCell>
+
+    <!-- RISKS -->
+    <mxCell id="panel_risks_hdr" value="RISKS" style="rounded=1;fillColor=#9B7FD4;strokeColor=#6B4FA4;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="1530" y="677" width="360" height="36" as="geometry"/>
+    </mxCell>
+    <mxCell id="panel_risks_body" value="&lt;span style='font-size:10px;'&gt;• SSL verify=False — Touchstone API cert not in CRC trust store; all API calls bypass TLS certificate validation (flagged by security review — Billy)&lt;br&gt;• ResultSetCount in API response may not match actual row count — pagination edge case&lt;br&gt;• Terrorism analyses may return empty results if run against RDS catalog (not STC) — pending Jennifer confirmation&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3EFFF;strokeColor=#9B7FD4;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+      <mxGeometry x="1530" y="713" width="360" height="120" as="geometry"/>
+    </mxCell>
+
+    <!-- MITIGATIONS -->
+    <mxCell id="panel_mitig_hdr" value="MITIGATIONS" style="rounded=1;fillColor=#9B7FD4;strokeColor=#6B4FA4;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="1530" y="843" width="360" height="36" as="geometry"/>
+    </mxCell>
+    <mxCell id="panel_mitig_body" value="&lt;span style='font-size:10px;'&gt;• Azure App Service handles TLS termination, HTTPS enforcement, and routing natively — no reverse proxy required&lt;br&gt;• Azure Key Vault stores all service account credentials in production&lt;br&gt;• Entra ID SSO provides identity-based access control (pending IT)&lt;br&gt;• NSG restricts inbound to port 443 only&lt;br&gt;• Corporate firewall enforces HTTPS-only outbound&lt;br&gt;• All Touchstone API calls logged via @audited_call decorator&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3EFFF;strokeColor=#9B7FD4;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+      <mxGeometry x="1530" y="879" width="360" height="150" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ CONNECTORS ══════════════ -->
+    <!-- User → MFA -->
+    <mxCell id="c_user_mfa" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#CC0000;strokeWidth=2;" edge="1" parent="1" source="crc_users" target="mfa_int">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- MFA → Firewall (HTTPS) -->
+    <mxCell id="c_mfa_fw" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#CC0000;strokeWidth=2;fontColor=#CC0000;fontSize=9;" edge="1" parent="1" source="mfa_int" target="corp_firewall">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- Firewall → App Service -->
+    <mxCell id="c_fw_app" value="HTTPS/443" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#007700;strokeWidth=2;fontColor=#007700;fontSize=9;" edge="1" parent="1" source="corp_firewall" target="app_service">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- App Service → AIR Touchstone (SOAP/NTLM) -->
+    <mxCell id="c_app_air" value="SOAP/NTLM" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#CC0000;strokeWidth=2;fontColor=#CC0000;fontSize=9;dashed=1;" edge="1" parent="1" source="app_service" target="air_partner">
+      <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="860" y="440"/><mxPoint x="860" y="610"/><mxPoint x="250" y="610"/><mxPoint x="250" y="400"/></Array></mxGeometry>
+    </mxCell>
+    <!-- App Service → Key Vault -->
+    <mxCell id="c_app_kv" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#D97706;strokeWidth=1;dashed=1;" edge="1" parent="1" source="app_service" target="kv">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- App Service → Entra ID -->
+    <mxCell id="c_app_entra" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#D97706;strokeWidth=1;dashed=1;" edge="1" parent="1" source="app_service" target="entra">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- Excel download back to user -->
+    <mxCell id="c_excel_user" value="Excel Download" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#059669;strokeWidth=2;fontColor=#059669;fontSize=9;" edge="1" parent="1" source="app_service" target="managed_device">
+      <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="860" y="700"/><mxPoint x="85" y="700"/><mxPoint x="85" y="625"/></Array></mxGeometry>
+    </mxCell>
+
+    <!-- ══════════════ DEVELOPMENT MODULES BAR ══════════════ -->
+    <mxCell id="devbar_lbl" value="Development Modules:" style="text;html=1;fontSize=10;fontStyle=1;fontColor=#1E3A5F;align=right;" vertex="1" parent="1">
+      <mxGeometry x="20" y="775" width="160" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="m1b" value="M1: SOAP API Client" style="rounded=4;fillColor=#1E3A5F;fontColor=#FFFFFF;strokeColor=none;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="185" y="775" width="150" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="m2b" value="M2: SOAP Templates" style="rounded=4;fillColor=#2E5B9A;fontColor=#FFFFFF;strokeColor=none;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="340" y="775" width="150" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="m3b" value="M3: XML Parser" style="rounded=4;fillColor=#059669;fontColor=#FFFFFF;strokeColor=none;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="495" y="775" width="140" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="m4b" value="M4: Model Enrichment" style="rounded=4;fillColor=#059669;fontColor=#FFFFFF;strokeColor=none;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="640" y="775" width="155" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="m5b" value="M5: Flask SPA + Cache" style="rounded=4;fillColor=#059669;fontColor=#FFFFFF;strokeColor=none;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="800" y="775" width="155" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="m6b" value="M6: SOR Report Builder" style="rounded=4;fillColor=#059669;fontColor=#FFFFFF;strokeColor=none;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="960" y="775" width="160" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="m7b" value="M7: Audit Logging" style="rounded=4;fillColor=#059669;fontColor=#FFFFFF;strokeColor=none;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="1125" y="775" width="140" height="22" as="geometry"/>
+    </mxCell>
+
+    <!-- ══════════════ FOOTER ══════════════ -->
+    <mxCell id="footer" value="Prepared by: Richard Barnes  |  richard.barnes@crcgroup.com  |  CRC GROUP  |  June 26, 2026" style="text;html=1;fontSize=9;fontColor=#A09A94;align=center;italics=1;" vertex="1" parent="1">
+      <mxGeometry x="20" y="808" width="1480" height="18" as="geometry"/>
+    </mxCell>
+
+  </root>
+</mxGraphModel>
