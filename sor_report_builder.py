@@ -152,103 +152,54 @@ def _build_loss_sheet(wb, df, meta):
                     except (ValueError, TypeError): pass
                 ws.cell(row=r_idx, column=c_idx, value=val)
 
-    # ── Pre-calculate ALL values in pandas — no Excel formulas ──────────────
-    # This eliminates the "Calculating (threads)..." delay when opening the file.
-    # All values written as static numbers — instant open regardless of file size.
+    # ── AGG + OCC tables — all 10,000 rows required for formulas to work ────
+    # SUMIFS/MAXIFS/LARGE reference the full column range so every year row
+    # must exist. Years with no events get static 0 in loss cols (fast write).
+    # Years with events get live formulas. Pre-compute all data first.
 
-    print(f"  [SOR] Pre-calculating AGG/OCC tables in pandas...")
-
+    years_with_events = set()
     if not df.empty and "YearID" in df.columns:
-        # AGG: sum all losses per year
-        agg = df.groupby("YearID").agg(
-            GULoss=("GroundUpLoss", "sum"),
-            GRLoss=("GrossLoss",    "sum"),
-        ).reset_index()
-        agg_gu_map = dict(zip(agg["YearID"].astype(int), agg["GULoss"]))
-        agg_gr_map = dict(zip(agg["YearID"].astype(int), agg["GRLoss"]))
-
-        # OCC: max single event per year
-        occ = df.groupby("YearID").agg(
-            GUMax=("GroundUpLoss", "max"),
-            GRMax=("GrossLoss",    "max"),
-        ).reset_index()
-        occ_gu_map = dict(zip(occ["YearID"].astype(int), occ["GUMax"]))
-        occ_gr_map = dict(zip(occ["YearID"].astype(int), occ["GRMax"]))
-
-        # AAL: total losses / n_years
-        agg_aal_gu = float(df["GroundUpLoss"].sum()) / n_years
-        agg_aal_gr = float(df["GrossLoss"].sum())    / n_years
-        occ_aal_gu = float(occ["GUMax"].sum())       / n_years
-        occ_aal_gr = float(occ["GRMax"].sum())        / n_years
-
-        # SD: standard deviation of annual losses
-        all_years_gu = [agg_gu_map.get(y, 0) for y in range(1, n_years + 1)]
-        all_years_gr = [agg_gr_map.get(y, 0) for y in range(1, n_years + 1)]
-        all_years_occ_gu = [occ_gu_map.get(y, 0) for y in range(1, n_years + 1)]
-        all_years_occ_gr = [occ_gr_map.get(y, 0) for y in range(1, n_years + 1)]
-        import numpy as np
-        agg_sd_gu = float(np.std(all_years_gu, ddof=1))
-        agg_sd_gr = float(np.std(all_years_gr, ddof=1))
-        occ_sd_gu = float(np.std(all_years_occ_gu, ddof=1))
-        occ_sd_gr = float(np.std(all_years_occ_gr, ddof=1))
-
-        # Return period values: rank-based LARGE equivalent
-        # Sort descending, pick Nth value (100yr=rank100, 250yr=rank40, etc.)
-        rp_map = {100: 100, 250: 40, 500: 20, 1000: 10}
-
-        def rp_val(sorted_desc, rank):
-            return round(sorted_desc[rank-1]) if rank <= len(sorted_desc) else 0
-
-        agg_gu_sorted = sorted(agg_gu_map.values(), reverse=True)
-        agg_gr_sorted = sorted(agg_gr_map.values(), reverse=True)
-        occ_gu_sorted = sorted(occ_gu_map.values(), reverse=True)
-        occ_gr_sorted = sorted(occ_gr_map.values(), reverse=True)
-
-        # OCC return period also needs rank-based sort
-        occ_gu_sorted_rp = sorted(occ_gu_map.values(), reverse=True)
-        occ_gr_sorted_rp = sorted(occ_gr_map.values(), reverse=True)
-
-    else:
-        agg_gu_map = agg_gr_map = occ_gu_map = occ_gr_map = {}
-        agg_aal_gu = agg_aal_gr = occ_aal_gu = occ_aal_gr = 0
-        agg_sd_gu  = agg_sd_gr  = occ_sd_gu  = occ_sd_gr  = 0
-        agg_gu_sorted = agg_gr_sorted = []
-        occ_gu_sorted_rp = occ_gr_sorted_rp = []
-        rp_map = {100: 100, 250: 40, 500: 20, 1000: 10}
-
-    # ── Write AGG table cols I-M (static values) ──────────────────────────────
-    for year in range(1, n_years + 1):
-        r      = 3 + year
-        gu     = agg_gu_map.get(year, 0)
-        gr     = agg_gr_map.get(year, 0)
-        ws.cell(row=r, column=9,  value=year)
-        ws.cell(row=r, column=10, value=round(gu))
-        ws.cell(row=r, column=11, value=round((gu - agg_aal_gu) ** 2))
-        ws.cell(row=r, column=12, value=round(gr))
-        ws.cell(row=r, column=13, value=round((gr - agg_aal_gr) ** 2))
-
-    # ── Write OCC table cols O-S (static values) ──────────────────────────────
-    # Sort years by OCC GU descending for return period assignment
-    occ_gu_sorted_years = sorted(occ_gu_map.items(), key=lambda x: x[1], reverse=True)
-    occ_gu_rank = {year: rank+1 for rank, (year, _) in enumerate(occ_gu_sorted_years)}
-    occ_gr_sorted_years = sorted(occ_gr_map.items(), key=lambda x: x[1], reverse=True)
-    occ_gr_rank = {year: rank+1 for rank, (year, _) in enumerate(occ_gr_sorted_years)}
+        years_with_events = set(df["YearID"].dropna().astype(int).unique())
+    print(f"  [SOR] years_with_events count: {len(years_with_events)}")
+    print(f"  [SOR] Sample years: {sorted(list(years_with_events))[:5]}")
+    print(f"  [SOR] raw_cols being written: {raw_cols}")
 
     for year in range(1, n_years + 1):
-        r      = 3 + year
-        gu_max = occ_gu_map.get(year, 0)
-        gr_max = occ_gr_map.get(year, 0)
-        gu_rp  = round(n_years / occ_gu_rank[year], 1) if year in occ_gu_rank else 0
-        gr_rp  = round(n_years / occ_gr_rank[year], 1) if year in occ_gr_rank else 0
-        ws.cell(row=r, column=15, value=year)
-        ws.cell(row=r, column=16, value=gu_rp)
-        ws.cell(row=r, column=17, value=round(gu_max))
-        ws.cell(row=r, column=18, value=gr_rp)
-        ws.cell(row=r, column=19, value=round(gr_max))
+        r = 3 + year
+        if year in years_with_events:
+            # AGG cols I-M: live formulas
+            ws.cell(row=r, column=9,  value=year)
+            ws.cell(row=r, column=10, value=f"=SUMIFS($E:$E,$G:$G,$O{r})")
+            ws.cell(row=r, column=11, value=f"=(J{r}-$Z$4)^2")
+            ws.cell(row=r, column=12, value=f"=SUMIFS($D:$D,$G:$G,$O{r})")
+            ws.cell(row=r, column=13, value=f"=(L{r}-$Z$5)^2")
+            # OCC cols O-S: live formulas
+            ws.cell(row=r, column=15, value=year)
+            ws.cell(row=r, column=16, value=f"=1/(_xlfn.RANK.EQ(Q{r},$Q$4:$Q${last_occ_row},0)/{n_years})")
+            ws.cell(row=r, column=17, value=f"=_xlfn.MAXIFS($E:$E,$G:$G,$O{r})")
+            ws.cell(row=r, column=18, value=f"=1/(_xlfn.RANK.EQ(S{r},$S$4:$S${last_occ_row},0)/{n_years})")
+            ws.cell(row=r, column=19, value=f"=_xlfn.MAXIFS(D:D,$G:$G,$O{r})")
+        else:
+            # Zero-event year — write year integer + static 0 for loss cols
+            # Static values are much faster than formula strings for openpyxl
+            ws.cell(row=r, column=9,  value=year)  # I: Year
+            ws.cell(row=r, column=10, value=0)      # J: GULoss = 0
+            ws.cell(row=r, column=11, value=0)      # K: StdDevSq = 0
+            ws.cell(row=r, column=12, value=0)      # L: GRLoss = 0
+            ws.cell(row=r, column=13, value=0)      # M: StdDevSq = 0
+            ws.cell(row=r, column=15, value=year)   # O: Year
+            ws.cell(row=r, column=16, value=0)      # P: GURP = 0
+            ws.cell(row=r, column=17, value=0)      # Q: GULoss = 0
+            ws.cell(row=r, column=18, value=0)      # R: GRRP = 0
+            ws.cell(row=r, column=19, value=0)      # S: GRLoss = 0
 
-    print(f"  [SOR] AGG/OCC tables written as static values — no recalculation needed")
+    print(f"  [SOR] AGG/OCC: {len(years_with_events):,} formula rows + {n_years - len(years_with_events):,} static-zero rows")
 
-    # ── EP/AAL/SD summary rows 5-8 — all static values ───────────────────────
+    # ── EP/AAL/SD summary rows 4-7 — matching Touchstone layout ─────────────
+    # Row 4: AGG Ground Up  (LARGE from col J — aggregate GU per year)
+    # Row 5: AGG Gross      (LARGE from col L — aggregate GR per year)
+    # Row 6: OCC Ground Up  (LARGE from col Q — occurrence GU per year)
+    # Row 7: OCC Gross      (LARGE from col S — occurrence GR per year)
     ws["T4"] = "Agg/Occ"
     ws["U4"] = "Perspective"
     ws["T5"] = "AGG"
@@ -260,41 +211,50 @@ def _build_loss_sheet(wb, df, meta):
     ws["T8"] = ""
     ws["U8"] = "Gross"
 
+    # Style labels
     for r in [4, 5, 6, 7, 8]:
-        for c in [20, 21]:
+        for c in [20, 21]:  # T and U
             cell = ws.cell(row=r, column=c)
-            cell.font      = Font(name="Calibri", bold=True, size=9, color="FFFFFF")
-            cell.fill      = PatternFill("solid", fgColor="1E3A5F" if r in [4,5,6] else "2E5B9A")
-            cell.border    = _thin()
+            cell.font   = Font(name="Calibri", bold=True, size=9, color="FFFFFF")
+            cell.fill   = PatternFill("solid", fgColor="1E3A5F" if r in [4,5,6] else "2E5B9A")
+            cell.border = _thin()
             cell.alignment = Alignment(horizontal="center", vertical="center")
 
-    ws["V3"] = 100; ws["W3"] = 250; ws["X3"] = 500; ws["Y3"] = 1000
-    ws["Z3"] = "AAL"; ws["AA3"] = "SD"
-    _style_header(ws, 3, 22, 27)
+    # Column headers row 4
+    ws["V3"] = 100
+    ws["W3"] = 250
+    ws["X3"] = 500
+    ws["Y3"] = 1000
+    ws["Z3"] = "AAL"
+    ws["AA3"] = "SD"
+    _style_header(ws, 3, 22, 27)  # V-AA headers
 
-    # Static EP values — no LARGE/SUM formulas
-    ep_data = {
-        5: (agg_gu_sorted, agg_gr_sorted, round(agg_aal_gu), round(agg_sd_gu),
-            round(agg_aal_gr), round(agg_sd_gr)),
-        6: (agg_gr_sorted, agg_gr_sorted, round(agg_aal_gr), round(agg_sd_gr),
-            round(agg_aal_gr), round(agg_sd_gr)),
-        7: (occ_gu_sorted_rp, occ_gr_sorted_rp, round(occ_aal_gu), round(occ_sd_gu),
-            round(occ_aal_gr), round(occ_sd_gr)),
-        8: (occ_gr_sorted_rp, occ_gr_sorted_rp, round(occ_aal_gr), round(occ_sd_gr),
-            round(occ_aal_gr), round(occ_sd_gr)),
-    }
+    # Return period ranks: 100yr=100th, 250yr=40th, 500yr=20th, 1000yr=10th
+    rp_ranks = {"V": 100, "W": 40, "X": 20, "Y": 10}
 
-    for ep_row, rp_col, sorted_list, aal, sd in [
-        (5,  "V", agg_gu_sorted,     round(agg_aal_gu), round(agg_sd_gu)),
-        (6,  "V", agg_gr_sorted,     round(agg_aal_gr), round(agg_sd_gr)),
-        (7,  "V", occ_gu_sorted_rp,  round(occ_aal_gu), round(occ_sd_gu)),
-        (8,  "V", occ_gr_sorted_rp,  round(occ_aal_gr), round(occ_sd_gr)),
-    ]:
-        for rp, rank in [(100, 100), (250, 40), (500, 20), (1000, 10)]:
-            col = {100: "V", 250: "W", 500: "X", 1000: "Y"}[rp]
-            ws[f"{col}{ep_row}"] = rp_val(sorted_list, rank)
-        ws[f"Z{ep_row}"]  = aal
-        ws[f"AA{ep_row}"] = sd
+    # AGG Ground Up — LARGE from col J
+    for rp_letter, rank in rp_ranks.items():
+        ws[f"{rp_letter}5"] = f"=IFERROR(LARGE($J$4:$J${last_occ_row},{rank}),0)"
+    ws["Z5"]  = f"=SUM($J$4:$J${last_occ_row})/{n_years}"
+    ws["AA5"] = f"=SQRT(SUM($K$4:$K${last_occ_row})/({n_years}-1))"
+
+    # AGG Gross — LARGE from col L
+    for rp_letter, rank in rp_ranks.items():
+        ws[f"{rp_letter}6"] = f"=IFERROR(LARGE($L$4:$L${last_occ_row},{rank}),0)"
+    ws["Z6"]  = f"=SUM($L$4:$L${last_occ_row})/{n_years}"
+    ws["AA6"] = f"=SQRT(SUM($M$4:$M${last_occ_row})/({n_years}-1))"
+
+    # OCC Ground Up — LARGE from col Q
+    for rp_letter, rank in rp_ranks.items():
+        ws[f"{rp_letter}7"] = f"=IFERROR(LARGE($Q$4:$Q${last_occ_row},{rank}),0)"
+    ws["Z7"]  = f"=SUM($Q$4:$Q${last_occ_row})/{n_years}"
+    ws["AA7"] = f"=SQRT(SUM(($Q$4:$Q${last_occ_row}-$Z$7)^2)/({n_years}-1))"
+
+    # OCC Gross — LARGE from col S
+    for rp_letter, rank in rp_ranks.items():
+        ws[f"{rp_letter}8"] = f"=IFERROR(LARGE($S$4:$S${last_occ_row},{rank}),0)"
+    ws["Z8"]  = f"=SUM($S$4:$S${last_occ_row})/{n_years}"
+    ws["AA8"] = f"=SQRT(SUM(($S$4:$S${last_occ_row}-$Z$8)^2)/({n_years}-1))"
 
     # ── Top 5 events table rows 11-16 ────────────────────────────────────────
     # Pairs GU and Gross by the SAME YEAR (top 5 years ranked by GU loss) —
@@ -329,13 +289,10 @@ def _build_loss_sheet(wb, df, meta):
             gr_val  = round(occ_by_year.iloc[i]["GRMax"])
             ws.cell(row=r, column=21, value=gu_val)
             ws.cell(row=r, column=22, value=gr_val)
-            # Python lookup for EventDescription — no XLOOKUP formula needed
-            desc = ""
-            if not df.empty and "EventDescription" in df.columns:
-                match = df[df["YearID"] == year_id]["EventDescription"]
-                if not match.empty:
-                    desc = str(match.iloc[0])
-            ws.cell(row=r, column=23, value=desc)
+            # XLOOKUP on the actual YearID — guarantees same-year event match
+            ws.cell(row=r, column=23, value=(
+                f'=_xlfn.XLOOKUP({year_id},$G:$G,$B:$B,"",0,1)'
+            ))
         else:
             ws.cell(row=r, column=21, value=0)
             ws.cell(row=r, column=22, value=0)
